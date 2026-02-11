@@ -1,0 +1,14 @@
+# binary
+api
+*.exe
+
+# env
+.env
+.env.local
+
+# IDE
+.idea
+.vscode
+
+# OS
+.DS_Store
