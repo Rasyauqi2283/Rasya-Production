@@ -1,10 +1,13 @@
 package store
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Service is one layanan item for the public Layanan section.
@@ -27,11 +30,12 @@ type Service struct {
 // ServiceTags are the allowed tag values (untuk filter dan grouping).
 var ServiceTags = []string{"Design", "Web & Digital", "Konten & Kreatif", "Lain-lain"}
 
-// ServiceStore holds services in memory.
+// ServiceStore holds services in memory or PostgreSQL (when pool is set).
 type ServiceStore struct {
-	mu     sync.RWMutex
-	items  []Service
+	mu        sync.RWMutex
+	items     []Service
 	nextOrder int
+	pool      *pgxpool.Pool
 }
 
 // SeedService is title + tag + desc + price for initial seed (teks narasi seperti sebelumnya).
@@ -84,6 +88,10 @@ var seedServices = []SeedService{
 // SeedIfEmpty populates the store with default jasa (sama dengan JasaLanes) bila masih kosong. Sekali jalan, setelah itu kelola dari admin.
 // Setiap item dapat ID unik (indeks + generateID) agar checkbox dan Tutup/Buka per item tidak bentrok.
 func (s *ServiceStore) SeedIfEmpty() {
+	if s.pool != nil {
+		s.seedIfEmptyDB()
+		return
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if len(s.items) > 0 {
@@ -107,19 +115,46 @@ func (s *ServiceStore) SeedIfEmpty() {
 	}
 }
 
-// NewServiceStore returns a new service store.
+func (s *ServiceStore) seedIfEmptyDB() {
+	ctx := context.Background()
+	var n int
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM services`).Scan(&n); err != nil || n > 0 {
+		return
+	}
+	baseID := generateID()
+	for i, seed := range seedServices {
+		id := fmt.Sprintf("%s-%d", baseID, i)
+		ord := i + 1
+		_, err := s.pool.Exec(ctx, `INSERT INTO services (id, title, tag, "desc", price_awal, discount_percent, price_after_discount, "order", closed, created_at)
+			VALUES ($1,$2,$3,$4,$5,0,'',$6,false,NOW())`,
+			id, seed.Title, seed.Tag, seed.Desc, seed.PriceAwal, ord)
+		if err != nil {
+			return
+		}
+	}
+}
+
+// NewServiceStore returns a new in-memory service store.
 func NewServiceStore() *ServiceStore {
 	return &ServiceStore{items: make([]Service, 0), nextOrder: 0}
 }
 
+// NewServiceStoreFromDB returns a service store backed by PostgreSQL.
+func NewServiceStoreFromDB(pool *pgxpool.Pool) *ServiceStore {
+	return &ServiceStore{pool: pool}
+}
+
 // Add appends a service. tag and priceAwal can be empty (tag defaults to "Lain-lain" if not in ServiceTags).
 func (s *ServiceStore) Add(title, tag, desc, priceAwal string) Service {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	tag = strings.TrimSpace(tag)
 	if tag == "" {
 		tag = "Lain-lain"
 	}
+	if s.pool != nil {
+		return s.addDB(title, tag, desc, priceAwal)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.nextOrder++
 	svc := Service{
 		ID:                 generateID(),
@@ -137,8 +172,36 @@ func (s *ServiceStore) Add(title, tag, desc, priceAwal string) Service {
 	return svc
 }
 
+func (s *ServiceStore) addDB(title, tag, desc, priceAwal string) Service {
+	ctx := context.Background()
+	var nextOrd int
+	_ = s.pool.QueryRow(ctx, `SELECT COALESCE(MAX("order"),0)+1 FROM services`).Scan(&nextOrd)
+	svc := Service{
+		ID:                 generateID(),
+		Title:              title,
+		Tag:                tag,
+		Desc:               desc,
+		PriceAwal:          priceAwal,
+		DiscountPercent:    0,
+		PriceAfterDiscount: "",
+		Order:              nextOrd,
+		Closed:             false,
+		CreatedAt:          time.Now().UTC(),
+	}
+	_, err := s.pool.Exec(ctx, `INSERT INTO services (id, title, tag, "desc", price_awal, discount_percent, price_after_discount, "order", closed, created_at)
+		VALUES ($1,$2,$3,$4,$5,0,'',$6,false,$7)`,
+		svc.ID, svc.Title, svc.Tag, svc.Desc, svc.PriceAwal, svc.Order, svc.CreatedAt)
+	if err != nil {
+		return Service{}
+	}
+	return svc
+}
+
 // Update updates an existing service by ID. Semua field di-overwrite dari parameter. Returns (updated, true) or (zero, false).
 func (s *ServiceStore) Update(id, title, tag, desc, priceAwal string, discountPercent int, priceAfterDiscount string) (Service, bool) {
+	if s.pool != nil {
+		return s.updateDB(id, title, tag, desc, priceAwal, discountPercent, priceAfterDiscount)
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for i := range s.items {
@@ -161,8 +224,32 @@ func (s *ServiceStore) Update(id, title, tag, desc, priceAwal string, discountPe
 	return Service{}, false
 }
 
+func (s *ServiceStore) updateDB(id, title, tag, desc, priceAwal string, discountPercent int, priceAfterDiscount string) (Service, bool) {
+	ctx := context.Background()
+	_, err := s.pool.Exec(ctx, `UPDATE services SET
+		title = CASE WHEN $2 <> '' THEN $2 ELSE title END,
+		tag = CASE WHEN $3 <> '' THEN $3 ELSE tag END,
+		"desc" = $4, price_awal = $5,
+		discount_percent = CASE WHEN $6 BETWEEN 0 AND 100 THEN $6 ELSE discount_percent END,
+		price_after_discount = $7
+		WHERE id = $1`, id, title, tag, desc, priceAwal, discountPercent, priceAfterDiscount)
+	if err != nil {
+		return Service{}, false
+	}
+	var svc Service
+	err = s.pool.QueryRow(ctx, `SELECT id, title, tag, "desc", price_awal, discount_percent, price_after_discount, "order", closed, created_at FROM services WHERE id = $1`, id).Scan(
+		&svc.ID, &svc.Title, &svc.Tag, &svc.Desc, &svc.PriceAwal, &svc.DiscountPercent, &svc.PriceAfterDiscount, &svc.Order, &svc.Closed, &svc.CreatedAt)
+	if err != nil {
+		return Service{}, false
+	}
+	return svc, true
+}
+
 // List returns only active (non-closed) services, ordered by Order.
 func (s *ServiceStore) List() []Service {
+	if s.pool != nil {
+		return s.listDB(false)
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	var out []Service
@@ -176,6 +263,9 @@ func (s *ServiceStore) List() []Service {
 
 // ListAll returns all services (including closed) for admin.
 func (s *ServiceStore) ListAll() []Service {
+	if s.pool != nil {
+		return s.listDB(true)
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	out := make([]Service, len(s.items))
@@ -183,8 +273,38 @@ func (s *ServiceStore) ListAll() []Service {
 	return out
 }
 
+func (s *ServiceStore) listDB(all bool) []Service {
+	ctx := context.Background()
+	q := `SELECT id, title, tag, "desc", price_awal, discount_percent, price_after_discount, "order", closed, created_at FROM services ORDER BY "order"`
+	if !all {
+		q = `SELECT id, title, tag, "desc", price_awal, discount_percent, price_after_discount, "order", closed, created_at FROM services WHERE closed = false ORDER BY "order"`
+	}
+	rows, err := s.pool.Query(ctx, q)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	var out []Service
+	for rows.Next() {
+		var svc Service
+		if err := rows.Scan(&svc.ID, &svc.Title, &svc.Tag, &svc.Desc, &svc.PriceAwal, &svc.DiscountPercent, &svc.PriceAfterDiscount, &svc.Order, &svc.Closed, &svc.CreatedAt); err != nil {
+			return out
+		}
+		out = append(out, svc)
+	}
+	return out
+}
+
 // SetClosed sets the closed state of a service; returns true if found.
 func (s *ServiceStore) SetClosed(id string, closed bool) bool {
+	if s.pool != nil {
+		ctx := context.Background()
+		ct, err := s.pool.Exec(ctx, `UPDATE services SET closed = $2 WHERE id = $1`, id, closed)
+		if err != nil {
+			return false
+		}
+		return ct.RowsAffected() > 0
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for i := range s.items {
@@ -198,6 +318,14 @@ func (s *ServiceStore) SetClosed(id string, closed bool) bool {
 
 // Delete removes a service by ID.
 func (s *ServiceStore) Delete(id string) bool {
+	if s.pool != nil {
+		ctx := context.Background()
+		ct, err := s.pool.Exec(ctx, `DELETE FROM services WHERE id = $1`, id)
+		if err != nil {
+			return false
+		}
+		return ct.RowsAffected() > 0
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for i, svc := range s.items {

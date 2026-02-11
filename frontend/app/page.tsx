@@ -190,10 +190,10 @@ export default function Home() {
 
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
             <a
-              href="mailto:hello.rasyaproduction@gmail.com"
+              href="mailto:rasyauqi2283@gmail.com"
               className="rounded-lg bg-rasya-accent px-6 py-3 font-medium text-rasya-dark transition hover:bg-rasya-accent/90 text-center"
             >
-              hello.rasyaproduction@gmail.com
+              rasyauqi2283@gmail.com
             </a>
           </div>
 

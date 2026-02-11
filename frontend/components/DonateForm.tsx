@@ -228,6 +228,38 @@ export default function DonateForm({ apiUrl }: { apiUrl: string }) {
       >
         {loading ? "Menyiapkan pembayaran..." : "Bayar dengan GoPay"}
       </button>
+
+      {/* Opsi bayar via QRIS: scan QRIS untuk donasi */}
+      {(() => {
+        const qrisImageUrl = process.env.NEXT_PUBLIC_QRIS_IMAGE_URL || "/qris.png";
+        return (
+          <div className="mt-6 border-t border-rasya-border pt-6">
+            <p className="mb-2 text-center text-sm text-zinc-400">Atau scan QRIS untuk donasi</p>
+            <div className="flex justify-center">
+              <a
+                href={qrisImageUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-xl border border-rasya-border bg-white p-2"
+                aria-label="Buka gambar QRIS"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={qrisImageUrl}
+                  alt="QRIS Donasi - scan dengan aplikasi e-wallet atau bank"
+                  className="h-48 w-48 object-contain sm:h-56 sm:w-56"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              </a>
+            </div>
+            <p className="mt-2 text-center text-xs text-zinc-500">
+              Scan dengan aplikasi e-wallet atau bank Anda, lalu pilih nominal donasi.
+            </p>
+          </div>
+        );
+      })()}
     </form>
   );
 }
