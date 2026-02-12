@@ -1,5 +1,5 @@
-# binary
-api
+# binary (hanya file binary di root backend/go)
+/api
 *.exe
 
 # env
