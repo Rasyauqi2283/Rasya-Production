@@ -15,12 +15,68 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Rasya Production",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://raspro.co.id"),
+  title: {
+    default: "Rasya Production",
+    template: "%s | Rasya Production",
+  },
   description:
-    "Rasya Production — Layanan jasa perorangan: creative production, musik, dan pengalaman digital.",
+    "Rasya Production — layanan desain, konten kreatif, website, dan solusi digital untuk personal maupun bisnis.",
+  keywords: [
+    "Rasya Production",
+    "jasa desain",
+    "jasa website",
+    "content creator",
+    "creative production",
+    "jasa digital",
+    "jasa konten",
+    "freelance digital",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  authors: [{ name: "Rasya Production" }],
+  creator: "Rasya Production",
+  publisher: "Rasya Production",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   openGraph: {
     title: "Rasya Production",
-    description: "Layanan jasa perorangan — creative production, musik, dan digital.",
+    description:
+      "Layanan desain, konten kreatif, website, dan solusi digital untuk personal maupun bisnis.",
+    url: "/",
+    siteName: "Rasya Production",
+    locale: "id_ID",
+    type: "website",
+    images: [
+      {
+        url: "/Logo_contoh.png",
+        width: 512,
+        height: 512,
+        alt: "Logo Rasya Production",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Rasya Production",
+    description:
+      "Layanan desain, konten kreatif, website, dan solusi digital untuk personal maupun bisnis.",
+    images: ["/Logo_contoh.png"],
+  },
+  icons: {
+    icon: "/Logo_contoh.png",
+    shortcut: "/Logo_contoh.png",
+    apple: "/Logo_contoh.png",
   },
 };
 
