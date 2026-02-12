@@ -1,0 +1,14 @@
+# Build backend Go API when context = repo root (e.g. Koyeb)
+FROM golang:1.24-alpine AS builder
+WORKDIR /app
+COPY backend/go/go.mod backend/go/go.sum ./
+RUN go mod download
+COPY backend/go/ ./
+RUN CGO_ENABLED=0 go build -o server ./cmd/api
+
+FROM alpine:3.19
+RUN apk add --no-cache ca-certificates
+WORKDIR /app
+COPY --from=builder /app/server .
+EXPOSE 8080
+CMD ["./server"]
