@@ -329,7 +329,7 @@ function AdminLayanan({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }
 
   const bulkClose = async () => {
     if (selectedIds.size === 0) return;
-    for (const id of selectedIds) {
+    for (const id of Array.from(selectedIds)) {
       const s = services.find((x) => x.id === id);
       if (s && !s.closed) {
         await fetch(`${apiUrl}/api/admin/services/close`, {
@@ -346,7 +346,7 @@ function AdminLayanan({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }
   const bulkDelete = async () => {
     if (selectedIds.size === 0) return;
     if (!confirm(`Hapus ${selectedIds.size} layanan yang dipilih permanen?`)) return;
-    for (const id of selectedIds) {
+    for (const id of Array.from(selectedIds)) {
       await fetch(`${apiUrl}/api/admin/services?id=${encodeURIComponent(id)}`, {
         method: "DELETE",
         headers: headers(adminKey),
