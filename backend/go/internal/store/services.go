@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -118,8 +119,11 @@ func (s *ServiceStore) SeedIfEmpty() {
 func (s *ServiceStore) seedIfEmptyDB() {
 	ctx := context.Background()
 	var n int
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM services`).Scan(&n); err != nil || n > 0 {
-		return
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM services`).Scan(&n); err != nil {
+		return // tabel belum ada atau error; migrate harus jalan dulu
+	}
+	if n > 0 {
+		return // sudah ada data, tidak seed lagi
 	}
 	baseID := generateID()
 	for i, seed := range seedServices {
@@ -129,9 +133,11 @@ func (s *ServiceStore) seedIfEmptyDB() {
 			VALUES ($1,$2,$3,$4,$5,0,'',$6,false,NOW())`,
 			id, seed.Title, seed.Tag, seed.Desc, seed.PriceAwal, ord)
 		if err != nil {
+			log.Printf("[services] seed insert failed at %d: %v", i, err)
 			return
 		}
 	}
+	log.Printf("[services] seeded %d services (table was empty)", len(seedServices))
 }
 
 // NewServiceStore returns a new in-memory service store.

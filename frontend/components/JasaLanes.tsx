@@ -6,17 +6,30 @@ type Skill = { label: string; done: boolean };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-// Daftar jasa sumber tunggal: dari API (Kelola Layanan). Backend di-seed dengan daftar yang sama saat pertama kali jalan.
+// Dinamis: ≤6 = 1 baris statis; 7–8 = 1 baris scroll; >8 = di-split beberapa baris (max 8 per baris), tanpa gap.
+const STATIC_MAX = 6;
+const SPLIT_THRESHOLD = 9;
+const MAX_PER_ROW = 8;
+const MARQUEE_DURATION = 22;
 
-const NUM_ROWS = 7;
-const MARQUEE_DURATION = 18;
-
-function getSkillsForRow(allSkills: Skill[], rowIndex: number) {
-  const items: Skill[] = [];
-  for (let i = rowIndex; i < allSkills.length; i += NUM_ROWS) {
-    items.push(allSkills[i]);
+/** Pecah daftar layanan jadi baris-barisan. ≤6 → 1 baris; 7–8 → 1 baris; >8 → split max 8 per baris. */
+function buildRows(skills: Skill[]): Skill[][] {
+  const n = skills.length;
+  if (n <= STATIC_MAX) return [skills];
+  if (n < SPLIT_THRESHOLD) return [skills]; // 7 atau 8
+  const numRows = Math.ceil(n / MAX_PER_ROW);
+  const rows: Skill[][] = [];
+  for (let r = 0; r < numRows; r++) {
+    const start = r * MAX_PER_ROW;
+    const end = Math.min(start + MAX_PER_ROW, n);
+    rows.push(skills.slice(start, end));
   }
-  return items;
+  return rows;
+}
+
+/** Baris dengan 7+ item pakai scroll; ≤6 pakai statis. */
+function shouldScroll(row: Skill[]): boolean {
+  return row.length > STATIC_MAX;
 }
 
 function Item({ label, done }: { label: string; done: boolean }) {
@@ -48,15 +61,29 @@ function Item({ label, done }: { label: string; done: boolean }) {
   );
 }
 
-function BrickRow({
+/** Satu baris statis: tidak bergerak, 1 baris, tanpa gap. */
+function StaticRow({ skills }: { skills: Skill[] }) {
+  return (
+    <div className="w-full overflow-hidden py-2.5">
+      <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-2">
+        {skills.map((skill, i) => (
+          <Item key={`static-${i}-${skill.label}`} label={skill.label} done={skill.done} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Satu baris scroll: kanan → kiri, 2 salinan isi agar loop seamless (tanpa gap). */
+function ScrollRow({
   skills,
   rowIndex,
 }: {
-  skills: { label: string; done: boolean }[];
+  skills: Skill[];
   rowIndex: number;
 }) {
   const isOffsetRow = rowIndex % 2 === 1;
-  const delay = (rowIndex * (MARQUEE_DURATION / NUM_ROWS)) % MARQUEE_DURATION;
+  const delay = (rowIndex * (MARQUEE_DURATION / 2)) % MARQUEE_DURATION;
 
   return (
     <div className="w-full overflow-hidden">
@@ -70,12 +97,12 @@ function BrickRow({
       >
         <span className="flex shrink-0 items-center">
           {skills.map((skill, i) => (
-            <Item key={`1-${i}-${skill.label}`} label={skill.label} done={skill.done} />
+            <Item key={`a-${i}-${skill.label}`} label={skill.label} done={skill.done} />
           ))}
         </span>
         <span className="flex shrink-0 items-center">
           {skills.map((skill, i) => (
-            <Item key={`2-${i}-${skill.label}`} label={skill.label} done={skill.done} />
+            <Item key={`b-${i}-${skill.label}`} label={skill.label} done={skill.done} />
           ))}
         </span>
       </div>
@@ -88,7 +115,6 @@ export default function JasaLanes() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Sumber tunggal: judul layanan dari Kelola Layanan (backend di-seed dengan daftar jasa default).
     fetch(`${API_URL}/api/services`)
       .then((res) => res.text())
       .then((text) => {
@@ -111,7 +137,7 @@ export default function JasaLanes() {
       .finally(() => setLoading(false));
   }, []);
 
-  const rows = Array.from({ length: NUM_ROWS }, (_, i) => getSkillsForRow(skills, i));
+  const rows = buildRows(skills);
   const hasSkills = skills.length > 0;
 
   return (
@@ -150,9 +176,13 @@ export default function JasaLanes() {
           </p>
         ) : (
           <div className="space-y-0">
-            {rows.map((rowSkills, rowIndex) => (
-              <BrickRow key={rowIndex} skills={rowSkills} rowIndex={rowIndex} />
-            ))}
+            {rows.map((rowSkills, rowIndex) =>
+              shouldScroll(rowSkills) ? (
+                <ScrollRow key={rowIndex} skills={rowSkills} rowIndex={rowIndex} />
+              ) : (
+                <StaticRow key={rowIndex} skills={rowSkills} />
+              )
+            )}
           </div>
         )}
       </div>
