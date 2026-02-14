@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Skill = { label: string; done: boolean };
 
@@ -111,6 +112,7 @@ function ScrollRow({
 }
 
 export default function JasaLanes() {
+  const { t } = useLanguage();
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -150,12 +152,12 @@ export default function JasaLanes() {
           id="jasa-lanes-heading"
           className="mb-10 text-center text-2xl font-bold text-white sm:text-3xl"
         >
-          Mau sewa jasa saya? dan bantu saya memenuhi kotak ini?
+          {t("jasa_heading")}
         </h2>
         <p className="mb-8 text-center text-sm text-zinc-500">
           <span className="inline-flex items-center gap-2">
             <span className="h-4 w-4 rounded border border-rasya-border bg-rasya-card" />
-            Belum pernah
+            {t("jasa_never")}
           </span>
           <span className="mx-4">·</span>
           <span className="inline-flex items-center gap-2 text-rasya-accent">
@@ -164,16 +166,14 @@ export default function JasaLanes() {
                 <path d="M2 6l3 3 5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
               </svg>
             </span>
-            Sudah pernah
+            {t("jasa_ever")}
           </span>
         </p>
 
         {loading && !hasSkills ? (
-          <p className="text-center text-sm text-zinc-500">Memuat daftar layanan...</p>
+          <p className="text-center text-sm text-zinc-500">{t("jasa_loading")}</p>
         ) : !hasSkills ? (
-          <p className="text-center text-sm text-zinc-500">
-            Daftar layanan dikelola dari admin (Kelola Layanan). Pastikan backend sudah jalan dan di-seed.
-          </p>
+          <p className="text-center text-sm text-zinc-500">{t("jasa_empty")}</p>
         ) : (
           <div className="space-y-0">
             {rows.map((rowSkills, rowIndex) =>

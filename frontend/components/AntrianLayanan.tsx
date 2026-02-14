@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function AntrianLayanan({ apiUrl }: { apiUrl: string }) {
+  const { t } = useLanguage();
   const [antrian, setAntrian] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,13 +36,13 @@ export default function AntrianLayanan({ apiUrl }: { apiUrl: string }) {
           id="antrian-heading"
           className="mb-4 font-mono text-sm uppercase tracking-widest text-rasya-accent"
         >
-          Antrian
+          {t("antrian_heading")}
         </h2>
         <h3 className="mb-6 text-3xl font-bold text-white sm:text-4xl">
-          Layanan yang sedang dikerjakan
+          {t("antrian_title")}
         </h3>
         <p className="mb-8 max-w-2xl text-zinc-400">
-          Beberapa order yang sedang dalam pengerjaan—tanpa detail sensitif; detail lengkap ada di porto setelah selesai.
+          {t("antrian_desc")}
         </p>
         <ul className="flex flex-wrap gap-3">
           {antrian.map((nama) => (

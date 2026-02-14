@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 const AMOUNTS = [10000, 25000, 50000, 100000] as const;
 
@@ -65,10 +66,11 @@ export default function DonateForm({ apiUrl }: { apiUrl: string }) {
   const effectiveAmount = amount > 0 ? amount : (parseInt(customAmount, 10) || 0);
   const isProduction = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true";
 
+  const { t } = useLanguage();
   const showThankYou = useCallback((highlighted: boolean) => {
     setSuccess({
       ok: true,
-      message: "Terima kasih. Pembayaran donasi Anda diproses.",
+      message: t("donate_thanks_msg"),
       highlighted,
     });
     setAmount(0);
@@ -76,13 +78,13 @@ export default function DonateForm({ apiUrl }: { apiUrl: string }) {
     setComment("");
     setName("");
     setEmail("");
-  }, []);
+  }, [t]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (effectiveAmount < 1000) {
-      setError("Nominal minimal Rp 1.000.");
+      setError(t("donate_error_min"));
       return;
     }
     setLoading(true);
@@ -100,7 +102,7 @@ export default function DonateForm({ apiUrl }: { apiUrl: string }) {
       .then(async (data: CreateTransactionResponse) => {
         if (!data.ok || !data.snap_token) {
           setLoading(false);
-          setError(data.message || "Gagal membuat transaksi. Coba lagi atau gunakan transfer manual.");
+          setError(data.message || t("donate_error_create"));
           return;
         }
         const clientKey = data.client_key || "";
@@ -113,12 +115,12 @@ export default function DonateForm({ apiUrl }: { apiUrl: string }) {
           await loadSnapScript(clientKey, isProduction);
         } catch {
           setLoading(false);
-          setError("Gagal memuat halaman pembayaran.");
+          setError(t("donate_error_script"));
           return;
         }
         if (typeof window.snap?.pay !== "function") {
           setLoading(false);
-          setError("Pembayaran belum siap. Refresh halaman dan coba lagi.");
+          setError(t("donate_error_ready"));
           return;
         }
         setLoading(false);
@@ -127,30 +129,30 @@ export default function DonateForm({ apiUrl }: { apiUrl: string }) {
         window.snap.pay(data.snap_token, {
           onSuccess: () => showThankYou(highlighted),
           onPending: () => showThankYou(highlighted),
-          onError: () => setError("Pembayaran gagal atau dibatalkan."),
+          onError: () => setError(t("donate_error_failed")),
           onClose: () => {},
         });
       })
       .catch(() => {
         setLoading(false);
-        setError("Koneksi gagal. Pastikan backend berjalan dan CORS benar.");
+        setError(t("donate_error_connection"));
       });
   }
 
   if (success) {
     return (
       <div className="rounded-xl border border-rasya-accent/30 bg-rasya-card p-6 text-left">
-        <p className="mb-4 text-rasya-accent">Terima kasih sudah berdonasi.</p>
+        <p className="mb-4 text-rasya-accent">{t("donate_thanks")}</p>
         <p className="mb-4 text-zinc-300">{success.message}</p>
         {success.highlighted && (
-          <p className="mt-4 text-sm text-rasya-accent">Donasi Anda akan diprioritaskan ke inbox saya.</p>
+          <p className="mt-4 text-sm text-rasya-accent">{t("donate_priority")}</p>
         )}
         <button
           type="button"
           onClick={() => setSuccess(null)}
           className="mt-4 text-sm text-zinc-400 underline hover:text-white"
         >
-          Donasi lagi
+          {t("donate_again")}
         </button>
       </div>
     );
@@ -158,11 +160,9 @@ export default function DonateForm({ apiUrl }: { apiUrl: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 text-left">
-      <p className="text-sm text-zinc-400">
-        Donasi ≥ Rp 50.000 akan diprioritaskan ke inbox saya. Donasi &lt; Rp 50.000 akan tampil sebagai ulasan di situs ini (dengan komentar).
-      </p>
+      <p className="text-sm text-zinc-400">{t("donate_note")}</p>
       <div>
-        <label className="mb-2 block text-sm text-zinc-400">Nominal (IDR)</label>
+        <label className="mb-2 block text-sm text-zinc-400">{t("donate_label_amount")}</label>
         <div className="flex flex-wrap gap-2">
           {AMOUNTS.map((a) => (
             <button
@@ -182,40 +182,40 @@ export default function DonateForm({ apiUrl }: { apiUrl: string }) {
         <input
           type="number"
           min={0}
-          placeholder="Atau isi nominal lain"
+          placeholder={t("donate_placeholder_amount")}
           value={customAmount}
           onChange={(e) => { setCustomAmount(e.target.value); setAmount(0); }}
           className="mt-2 w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white placeholder-zinc-500 focus:border-rasya-accent/50 focus:outline-none"
         />
       </div>
       <div>
-        <label className="mb-2 block text-sm text-zinc-400">Komentar / ulasan (opsional)</label>
+        <label className="mb-2 block text-sm text-zinc-400">{t("donate_label_comment")}</label>
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           rows={3}
-          placeholder="Pesan atau ulasan Anda..."
+          placeholder={t("donate_placeholder_comment")}
           className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white placeholder-zinc-500 focus:border-rasya-accent/50 focus:outline-none"
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-2 block text-sm text-zinc-400">Nama</label>
+          <label className="mb-2 block text-sm text-zinc-400">{t("donate_label_name")}</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Nama Anda"
+            placeholder={t("donate_placeholder_name")}
             className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white placeholder-zinc-500 focus:border-rasya-accent/50 focus:outline-none"
           />
         </div>
         <div>
-          <label className="mb-2 block text-sm text-zinc-400">Email</label>
+          <label className="mb-2 block text-sm text-zinc-400">{t("donate_label_email")}</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="email@contoh.com"
+            placeholder={t("donate_placeholder_email")}
             className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white placeholder-zinc-500 focus:border-rasya-accent/50 focus:outline-none"
           />
         </div>
@@ -226,7 +226,7 @@ export default function DonateForm({ apiUrl }: { apiUrl: string }) {
         disabled={loading || effectiveAmount <= 0}
         className="w-full rounded-lg bg-rasya-accent px-6 py-3 font-medium text-rasya-dark transition hover:bg-rasya-accent/90 disabled:opacity-50"
       >
-        {loading ? "Menyiapkan pembayaran..." : "Bayar dengan GoPay"}
+        {loading ? t("donate_loading") : t("donate_submit")}
       </button>
 
       {/* Opsi bayar via QRIS: scan QRIS untuk donasi */}
@@ -234,7 +234,7 @@ export default function DonateForm({ apiUrl }: { apiUrl: string }) {
         const qrisImageUrl = process.env.NEXT_PUBLIC_QRIS_IMAGE_URL || "/qris.png";
         return (
           <div className="mt-6 border-t border-rasya-border pt-6">
-            <p className="mb-2 text-center text-sm text-zinc-400">Atau scan QRIS untuk donasi</p>
+            <p className="mb-2 text-center text-sm text-zinc-400">{t("donate_qris")}</p>
             <div className="flex justify-center">
               <a
                 href={qrisImageUrl}
@@ -254,9 +254,7 @@ export default function DonateForm({ apiUrl }: { apiUrl: string }) {
                 />
               </a>
             </div>
-            <p className="mt-2 text-center text-xs text-zinc-500">
-              Scan dengan aplikasi e-wallet atau bank Anda, lalu pilih nominal donasi.
-            </p>
+            <p className="mt-2 text-center text-xs text-zinc-500">{t("donate_qris_hint")}</p>
           </div>
         );
       })()}

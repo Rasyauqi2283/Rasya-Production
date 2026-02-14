@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 type PortoItem = {
   id: string;
@@ -14,6 +15,7 @@ type PortoItem = {
 };
 
 export default function PortoList({ apiUrl }: { apiUrl: string }) {
+  const { t } = useLanguage();
   const [porto, setPorto] = useState<PortoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTag, setActiveTag] = useState("");
@@ -52,14 +54,10 @@ export default function PortoList({ apiUrl }: { apiUrl: string }) {
   const imageBase = apiUrl.replace(/\/$/, "");
 
   if (loading) {
-    return <p className="text-sm text-zinc-500">Memuat portofolio...</p>;
+    return <p className="text-sm text-zinc-500">{t("porto_loading")}</p>;
   }
   if (porto.length === 0) {
-    return (
-      <p className="text-sm text-zinc-500">
-        Belum ada portofolio. Upload dari halaman admin.
-      </p>
-    );
+    return <p className="text-sm text-zinc-500">{t("porto_empty")}</p>;
   }
 
   return (

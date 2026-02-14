@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 const SERVICE_TAGS = ["Design", "Web & Digital", "Konten & Kreatif", "Lain-lain"] as const;
+const TAG_KEYS: Record<string, string> = {
+  "Design": "tag_design",
+  "Web & Digital": "tag_web",
+  "Konten & Kreatif": "tag_konten",
+  "Lain-lain": "tag_lain",
+};
 
 type ServiceItem = {
   id: string;
@@ -41,6 +48,7 @@ function groupByTag(services: ServiceItem[]): Category[] {
 }
 
 export default function LayananSection() {
+  const { t } = useLanguage();
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState<string>(SERVICE_TAGS[0]);
   const [loading, setLoading] = useState(true);
@@ -81,7 +89,7 @@ export default function LayananSection() {
                 id="services-heading"
                 className="font-mono text-sm uppercase tracking-widest text-rasya-accent"
               >
-                Layanan
+                {t("services_heading")}
               </h2>
               <nav aria-label="Kategori layanan" className="flex flex-wrap gap-2">
                 {SERVICE_TAGS.map((label) => (
@@ -95,23 +103,21 @@ export default function LayananSection() {
                         : "border-rasya-border text-zinc-400 hover:border-rasya-accent/50 hover:text-white"
                     }`}
                   >
-                    {label}
+                    {t(TAG_KEYS[label] ?? "tag_lain")}
                   </button>
                 ))}
               </nav>
             </div>
             <h3 className="text-3xl font-bold text-white sm:text-4xl">
-              Apa yang bisa saya kerjakan
+              {t("services_title")}
             </h3>
           </div>
         </div>
 
         {loading ? (
-          <p className="text-sm text-zinc-500">Memuat layanan...</p>
+          <p className="text-sm text-zinc-500">{t("services_loading")}</p>
         ) : !hasAny ? (
-          <p className="text-sm text-zinc-500">
-            Belum ada layanan. Tambah layanan di halaman admin (Kelola Layanan).
-          </p>
+          <p className="text-sm text-zinc-500">{t("services_empty")}</p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {(category?.services ?? []).map((item) => (
@@ -127,21 +133,19 @@ export default function LayananSection() {
                 </p>
                 <div className="text-sm pt-2 border-t border-rasya-border">
                   {item.closed ? (
-                    <p className="font-medium text-zinc-500">
-                      closed can&apos;t order
-                    </p>
+                    <p className="font-medium text-zinc-500">{t("services_closed")}</p>
                   ) : item.discount_percent && item.discount_percent > 0 ? (
                     <>
                       <p className="text-zinc-500 line-through">
-                        {item.price_awal || "Sesuai brief"}
+                        {item.price_awal || t("services_brief")}
                       </p>
                       <p className="font-medium text-rasya-accent mt-0.5">
-                        Diskon {item.discount_percent}%: {item.price_after_discount || "—"}
+                        {t("services_discount")} {item.discount_percent}%: {item.price_after_discount || "—"}
                       </p>
                     </>
                   ) : (
                     <p className="font-medium text-rasya-accent">
-                      {item.price_awal || "Sesuai brief"}
+                      {item.price_awal || t("services_brief")}
                     </p>
                   )}
                 </div>

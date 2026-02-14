@@ -1,21 +1,27 @@
+"use client";
+
 import AntrianLayanan from "@/components/AntrianLayanan";
 import DonateForm from "@/components/DonateForm";
 import JasaLanes from "@/components/JasaLanes";
 import LayananSection from "@/components/LayananSection";
 import PortoList from "@/components/PortoList";
+import TemplatesShowcase from "@/components/TemplatesShowcase";
+import { useLanguage } from "@/context/LanguageContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "6281234567890";
-const WHATSAPP_PREFILL = "Halo, saya dari website Rasya Production. Saya ingin bertanya tentang layanan.";
+
+const WHATSAPP_PREFILL_ID = "Halo, saya dari website Rasya Production. Saya ingin bertanya tentang layanan.";
+const WHATSAPP_PREFILL_EN = "Hi, I'm from the Rasya Production website. I'd like to ask about your services.";
 
 export default function Home() {
-  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, "")}?text=${encodeURIComponent(WHATSAPP_PREFILL)}`;
+  const { lang, t } = useLanguage();
+  const whatsappPrefill = lang === "en" ? WHATSAPP_PREFILL_EN : WHATSAPP_PREFILL_ID;
+  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappPrefill)}`;
+
   return (
     <>
-      {/* Mau sewa jasa + jalur kotak/checklist */}
       <JasaLanes />
-
-      {/* Hero */}
       <section
         id="hero"
         className="relative flex min-h-screen flex-col items-center justify-center px-6 pt-24"
@@ -24,34 +30,31 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-rasya-surface/50 to-rasya-dark" />
         <div className="relative z-10 max-w-3xl text-center">
           <p className="mb-4 font-mono text-sm uppercase tracking-widest text-rasya-accent">
-            Creative Production & Digital
+            {t("hero_tagline")}
           </p>
           <h1 className="mb-6 text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
-            Rasya{" "}
-            <span className="text-rasya-accent">Production</span>
+            Rasya <span className="text-rasya-accent">Production</span>
           </h1>
           <p className="mx-auto max-w-xl text-lg text-zinc-400">
-            Dari konsep sampai deliver. Konten, desain, dan solusi digital yang
-            dibangun dengan presisi—untuk brand dan bisnis Anda.
+            {t("hero_subtitle")}
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             <a
               href="#contact"
               className="rounded-lg bg-rasya-accent px-6 py-3 font-medium text-rasya-dark transition hover:bg-rasya-accent/90"
             >
-              Mulai Proyek
+              {t("hero_cta_project")}
             </a>
             <a
               href="#about"
               className="rounded-lg border border-rasya-border px-6 py-3 font-medium text-zinc-300 transition hover:border-rasya-accent/50 hover:text-white"
             >
-              Tentang Saya
+              {t("hero_cta_about")}
             </a>
           </div>
         </div>
       </section>
 
-      {/* About */}
       <section
         id="about"
         className="border-t border-rasya-border bg-rasya-surface py-24 px-6"
@@ -62,38 +65,29 @@ export default function Home() {
             id="about-heading"
             className="mb-4 font-mono text-sm uppercase tracking-widest text-rasya-accent"
           >
-            Tentang
+            {t("about_heading")}
           </h2>
           <h3 className="mb-8 text-3xl font-bold text-white sm:text-4xl">
-            Solusi kreatif & digital perorangan
+            {t("about_title")}
           </h3>
           <div className="grid gap-8 md:grid-cols-2">
-            <p className="text-zinc-400 leading-relaxed">
-              Rasya Production adalah brand pribadi saya: konten, desain, dan
-              teknologi. Setiap proyek saya kerjakan dengan pendekatan rapi dan
-              berorientasi hasil—tanpa mengorbankan kreativitas.
-            </p>
-            <p className="text-zinc-400 leading-relaxed">
-              Saya fokus pada kualitas output: dari konten dan desain hingga
-              pengalaman digital. Situs ini—rasyaproduction.up.railway.app atau
-              raspro.co.id—adalah wajah profesional dari layanan yang saya tawarkan.
-            </p>
+            <p className="text-zinc-400 leading-relaxed">{t("about_p1")}</p>
+            <p className="text-zinc-400 leading-relaxed">{t("about_p2")}</p>
           </div>
           <div className="mt-10 rounded-xl border border-rasya-accent/30 bg-rasya-accent/5 px-6 py-5">
             <p className="text-zinc-300 leading-relaxed">
-              <span className="font-medium text-white">Vendor atau agency yang butuh tenaga eksternal?</span> Saya bisa menjadi third party Anda dalam pengerjaan—dengan <span className="text-rasya-accent font-medium">kontrak yang jelas</span>: scope, deadline, dan kompensasi terdefinisi. Kerja sama profesional, bukan kerja borongan tanpa batas.
+              <span className="font-medium text-white">{t("about_vendor")}</span>{" "}
+              {t("about_vendor_desc")}
             </p>
           </div>
         </div>
       </section>
 
-      {/* Layanan (kategori + card deskripsi & harga) */}
       <LayananSection />
+      <TemplatesShowcase />
 
-      {/* Antrian layanan (hanya nama, tanpa harga) */}
       <AntrianLayanan apiUrl={API_URL} />
 
-      {/* Porto (Portofolio) */}
       <section
         id="porto"
         className="border-t border-rasya-border bg-rasya-surface py-24 px-6"
@@ -104,19 +98,16 @@ export default function Home() {
             id="porto-heading"
             className="mb-4 font-mono text-sm uppercase tracking-widest text-rasya-accent"
           >
-            Porto
+            {t("porto_heading")}
           </h2>
           <h3 className="mb-12 text-3xl font-bold text-white sm:text-4xl">
-            Portofolio
+            {t("porto_title")}
           </h3>
-          <p className="mb-12 max-w-2xl text-zinc-400">
-            Beberapa proyek yang pernah saya kerjakan—musik, web, dan konten (yang sudah selesai kontrak).
-          </p>
+          <p className="mb-12 max-w-2xl text-zinc-400">{t("porto_desc")}</p>
           <PortoList apiUrl={API_URL} />
         </div>
       </section>
 
-      {/* Contact & Donasi */}
       <section
         id="contact"
         className="border-t border-rasya-border bg-rasya-surface py-24 px-6"
@@ -127,16 +118,13 @@ export default function Home() {
             id="contact-heading"
             className="mb-4 font-mono text-sm uppercase tracking-widest text-rasya-accent"
           >
-            Kontak
+            {t("contact_heading")}
           </h2>
           <h3 className="mb-6 text-3xl font-bold text-white sm:text-4xl">
-            Siap mulai proyek atau ingin berdonasi?
+            {t("contact_title")}
           </h3>
-          <p className="mb-8 text-zinc-400">
-            Langsung hubungi lewat WhatsApp, media sosial, atau email dan donasi di bawah.
-          </p>
-
-          <p className="mb-4 text-center text-sm text-zinc-500">Temukan kami di:</p>
+          <p className="mb-8 text-zinc-400">{t("contact_desc")}</p>
+          <p className="mb-4 text-center text-sm text-zinc-500">{t("contact_find")}</p>
           <div className="mb-8 flex flex-wrap items-center justify-center gap-4">
             <a
               href={whatsappUrl}
@@ -187,7 +175,6 @@ export default function Home() {
               LinkedIn
             </a>
           </div>
-
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
             <a
               href="mailto:rasyauqi2283@gmail.com"
@@ -196,9 +183,8 @@ export default function Home() {
               rasyauqi2283@gmail.com
             </a>
           </div>
-
           <div>
-            <h4 className="mb-4 text-lg font-semibold text-white">Donasi</h4>
+            <h4 className="mb-4 text-lg font-semibold text-white">{t("contact_donate")}</h4>
             <DonateForm apiUrl={API_URL} />
           </div>
         </div>
