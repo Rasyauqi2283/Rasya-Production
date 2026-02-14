@@ -5,7 +5,6 @@ import DonateForm from "@/components/DonateForm";
 import JasaLanes from "@/components/JasaLanes";
 import LayananSection from "@/components/LayananSection";
 import PortoList from "@/components/PortoList";
-import TemplatesShowcase from "@/components/TemplatesShowcase";
 import { useLanguage } from "@/context/LanguageContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -84,7 +83,6 @@ export default function Home() {
       </section>
 
       <LayananSection />
-      <TemplatesShowcase />
 
       <AntrianLayanan apiUrl={API_URL} />
 
