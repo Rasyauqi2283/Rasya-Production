@@ -9,6 +9,19 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
 const SERVICE_TAGS = ["Design", "Web & Digital", "Konten & Kreatif", "Lain-lain"] as const;
 
+// Dashboard analytic: skill/tech rating (skala 5). Bisa diedit manual di sini.
+const SKILL_RATINGS: { name: string; rating: number; max?: number }[] = [
+  { name: "Go (Golang)", rating: 4 },
+  { name: "Next.js", rating: 4 },
+  { name: "React", rating: 4 },
+  { name: "TypeScript", rating: 4 },
+  { name: "PostgreSQL", rating: 4 },
+  { name: "Node.js", rating: 3 },
+  { name: "Figma / UI", rating: 4 },
+  { name: "Video editing", rating: 3 },
+  { name: "Content writing", rating: 4 },
+].map((s) => ({ ...s, max: s.max ?? 5 }));
+
 // Parse teks harga Indonesia (e.g. "400 ribu", "1,5 jt") ke angka. Return null jika tidak bisa parse.
 function parsePriceIdr(text: string): number | null {
   const t = text.replace(/\s*\([^)]*\)\s*/g, "").trim().toLowerCase();
@@ -198,9 +211,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-rasya-dark pt-24 pb-16 px-6">
-      <div className="mx-auto max-w-4xl">
-        <div className="flex items-center justify-between mb-10">
+    <div className="min-h-screen bg-rasya-dark pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1400px]">
+        <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold text-white">Admin</h1>
           <div className="flex items-center gap-4">
             <a href="/" className="text-sm text-zinc-400 hover:text-rasya-accent">← Situs</a>
@@ -214,13 +227,44 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <AdminLayanan apiUrl={API_URL} adminKey={adminKey} />
-        <AdminOrder apiUrl={API_URL} adminKey={adminKey} />
+        <AdminDashboard />
+        <div className="grid gap-8 xl:grid-cols-2">
+          <div className="min-w-0">
+            <AdminLayanan apiUrl={API_URL} adminKey={adminKey} />
+          </div>
+          <div className="min-w-0">
+            <AdminOrder apiUrl={API_URL} adminKey={adminKey} />
+          </div>
+        </div>
         <AdminDonasi apiUrl={API_URL} adminKey={adminKey} />
         <AdminPorto apiUrl={API_URL} adminKey={adminKey} />
         <AdminAgreement apiUrl={API_URL} adminKey={adminKey} />
       </div>
     </div>
+  );
+}
+
+function AdminDashboard() {
+  return (
+    <section className="mb-8 rounded-xl border border-rasya-border bg-rasya-surface p-5">
+      <h2 className="text-base font-semibold text-white mb-3">Dashboard Analytic</h2>
+      <p className="text-sm text-zinc-400 mb-4">
+        Kemampuan yang bisa dikerjakan — rating skala 5 (bisa disesuaikan di kode).
+      </p>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        {SKILL_RATINGS.map((s) => (
+          <div
+            key={s.name}
+            className="flex items-center justify-between rounded-lg border border-rasya-border bg-rasya-dark/60 px-3 py-2"
+          >
+            <span className="text-sm text-zinc-200 truncate" title={s.name}>{s.name}</span>
+            <span className="ml-2 shrink-0 text-xs font-medium text-rasya-accent">
+              {s.rating}/{s.max ?? 5}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
