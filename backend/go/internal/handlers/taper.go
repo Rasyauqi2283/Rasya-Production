@@ -344,6 +344,6 @@ func addImageWatermarkLastPage(inFile, outFile, imageFile string) error {
 
 func addImageWatermarkPDFCPU(inFile, outFile, imageFile string, selectedPages []string) error {
 	conf := model.NewDefaultConfiguration()
-	// pos:br = bottom right, sc: 0.2 = scale 20% (relative), onTop = true so signature is visible
-	return api.AddImageWatermarksFile(inFile, outFile, selectedPages, true, imageFile, "pos: br, sc: 0.2", conf)
+	// position:br = bottom right, scalefactor:0.2 rel = 20% (no ambiguous "sc" prefix)
+	return api.AddImageWatermarksFile(inFile, outFile, selectedPages, true, imageFile, "position:br, scalefactor:0.2 rel", conf)
 }
