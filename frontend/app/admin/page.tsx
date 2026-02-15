@@ -1312,6 +1312,7 @@ function AdminPorto({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
 }
 
 type AgreementForm = {
+  tier: string;
   nomor_perjanjian: string;
   tanggal: string;
   hari: string;
@@ -1347,9 +1348,18 @@ type AgreementForm = {
   serah_terima_hari: string;
   tanggung_jawab_hari: string;
   pemutusan_hari: string;
+  // Profesional-only fields
+  sla_response_time: string;
+  sla_uptime: string;
+  milestone_detail: string;
+  non_compete_bulan: string;
+  data_protection_pic: string;
+  escalation_pic1: string;
+  escalation_pic2: string;
 };
 
 const defaultAgreement: AgreementForm = {
+  tier: "standar",
   nomor_perjanjian: "",
   tanggal: "",
   hari: "",
@@ -1385,6 +1395,13 @@ const defaultAgreement: AgreementForm = {
   serah_terima_hari: "7 (tujuh)",
   tanggung_jawab_hari: "14 (empat belas)",
   pemutusan_hari: "14 (empat belas)",
+  sla_response_time: "",
+  sla_uptime: "",
+  milestone_detail: "",
+  non_compete_bulan: "",
+  data_protection_pic: "",
+  escalation_pic1: "",
+  escalation_pic2: "",
 };
 
 type SignedDocItem = {
@@ -1415,9 +1432,42 @@ function AdminAgreement({ apiUrl, adminKey }: { apiUrl: string; adminKey: string
   const [taperBaseUrl, setTaperBaseUrl] = useState("");
   const [agreementGeneratedDocs, setAgreementGeneratedDocs] = useState<AgreementGeneratedItem[]>([]);
   const [showAgreementDocsOverlay, setShowAgreementDocsOverlay] = useState(false);
+  const [showSamplePdfModal, setShowSamplePdfModal] = useState(false);
+  const [samplePdfBlobUrl, setSamplePdfBlobUrl] = useState<string | null>(null);
+  const [samplePdfLoading, setSamplePdfLoading] = useState(false);
   useEffect(() => {
     if (typeof window !== "undefined") setTaperBaseUrl(window.location.origin);
   }, []);
+
+  const openSamplePdf = async () => {
+    setSamplePdfLoading(true);
+    setSamplePdfBlobUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    try {
+      const h: HeadersInit = {};
+      if (adminKey) h["X-Admin-Key"] = adminKey;
+      const res = await fetch(`${apiUrl}/api/admin/agreement/sample?tier=${form.tier}`, { headers: h });
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      setSamplePdfBlobUrl(url);
+      setShowSamplePdfModal(true);
+    } catch {
+      // ignore
+    } finally {
+      setSamplePdfLoading(false);
+    }
+  };
+
+  const closeSamplePdfModal = () => {
+    setShowSamplePdfModal(false);
+    setSamplePdfBlobUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  };
 
   const set = (key: keyof AgreementForm, value: string) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -1482,7 +1532,7 @@ function AdminAgreement({ apiUrl, adminKey }: { apiUrl: string; adminKey: string
         setError(t || "Gagal generate PDF");
         return;
       }
-      let filename = "perjanjian-pemberian-jasa.pdf";
+      let filename = form.tier === "profesional" ? "perjanjian-jasa-profesional.pdf" : "perjanjian-jasa-standar.pdf";
       const disp = res.headers.get("Content-Disposition");
       if (disp) {
         const m = disp.match(/filename="?([^"]+)"?/);
@@ -1508,10 +1558,56 @@ function AdminAgreement({ apiUrl, adminKey }: { apiUrl: string; adminKey: string
 
   return (
     <section className="rounded-xl border border-rasya-border bg-rasya-surface p-6">
-      <h2 className="text-lg font-semibold text-white mb-2">5. Pembuatan agreement dengan client</h2>
+      <div className="flex items-center gap-2 mb-2">
+        <h2 className="text-lg font-semibold text-white">5. Pembuatan agreement dengan client</h2>
+        <button
+          type="button"
+          onClick={openSamplePdf}
+          disabled={samplePdfLoading}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-rasya-border bg-rasya-dark text-zinc-400 hover:border-rasya-accent hover:text-rasya-accent focus:outline-none focus:ring-2 focus:ring-rasya-accent/50 disabled:opacity-50"
+          title="Lihat PDF contoh (template yang disepakati)"
+          aria-label="Lihat PDF contoh"
+        >
+          ?
+        </button>
+      </div>
+      {showSamplePdfModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={closeSamplePdfModal}>
+          <div className="flex h-[90vh] w-full max-w-4xl flex-col rounded-xl border border-rasya-border bg-rasya-surface shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-rasya-border px-4 py-2">
+              <span className="text-sm font-medium text-white">Contoh draft perjanjian ({form.tier === "profesional" ? "Profesional / MSA" : "Standar"})</span>
+              <button type="button" onClick={closeSamplePdfModal} className="rounded p-1 text-zinc-400 hover:bg-rasya-dark hover:text-white">✕</button>
+            </div>
+            <div className="flex-1 min-h-0">
+              {samplePdfBlobUrl ? (
+                <iframe src={samplePdfBlobUrl} title="PDF contoh perjanjian" className="h-full w-full rounded-b-xl" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-zinc-500">Memuat PDF...</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <p className="text-sm text-zinc-400 mb-4">
-        Isi data di bawah lalu klik Generate PDF. File perjanjian pemberian jasa (sesuai template Rasya Production) akan diunduh.
+        Pilih tier agreement lalu isi data di bawah. File perjanjian jasa akan di-generate sesuai tier yang dipilih.
       </p>
+      {/* Tier selector */}
+      <div className="mb-4">
+        <label className="block text-xs text-zinc-400 mb-1">Tier Agreement</label>
+        <select
+          value={form.tier}
+          onChange={(e) => set("tier", e.target.value)}
+          className="rounded-lg border border-rasya-border bg-rasya-dark px-3 py-2 text-white text-sm focus:border-rasya-accent focus:outline-none w-full max-w-xs"
+        >
+          <option value="standar">Perjanjian Jasa Standar (Lite) — proyek ringan</option>
+          <option value="profesional">Perjanjian Jasa Profesional (Full) — proyek besar / corporate</option>
+        </select>
+        <p className="text-xs text-zinc-500 mt-1">
+          {form.tier === "profesional"
+            ? "Profesional: SLA, milestone, perlindungan data, indemnity, non-solicitation, force majeure detail, eskalasi, dispute resolution (arbitrase). Cocok untuk proyek > 10 juta / kompleks."
+            : "Standar: Ringkas 4-5 halaman. Cocok untuk proyek < 10 juta / sederhana."}
+        </p>
+      </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-4">
         <input value={form.nomor_perjanjian} onChange={(e) => set("nomor_perjanjian", e.target.value)} placeholder="Nomor perjanjian (contoh: 001/RP-PJ/I/2025)" className="rounded-lg border border-rasya-border bg-rasya-dark px-3 py-2 text-white placeholder-zinc-500 text-sm focus:border-rasya-accent focus:outline-none" />
         <input value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} placeholder="Tanggal (contoh: 5 Februari 2025)" className="rounded-lg border border-rasya-border bg-rasya-dark px-3 py-2 text-white placeholder-zinc-500 text-sm focus:border-rasya-accent focus:outline-none" />
@@ -1561,6 +1657,42 @@ function AdminAgreement({ apiUrl, adminKey }: { apiUrl: string; adminKey: string
         <input value={form.tanggung_jawab_hari} onChange={(e) => set("tanggung_jawab_hari", e.target.value)} placeholder="Tanggung jawab hari" className="w-40 rounded-lg border border-rasya-border bg-rasya-dark px-3 py-2 text-white text-sm focus:border-rasya-accent focus:outline-none" />
         <input value={form.pemutusan_hari} onChange={(e) => set("pemutusan_hari", e.target.value)} placeholder="Pemutusan hari" className="w-36 rounded-lg border border-rasya-border bg-rasya-dark px-3 py-2 text-white text-sm focus:border-rasya-accent focus:outline-none" />
       </div>
+      {/* Profesional-only fields */}
+      {form.tier === "profesional" && (
+        <div className="mb-4 rounded-lg border border-rasya-accent/30 bg-rasya-accent/5 p-4">
+          <p className="text-xs font-semibold text-rasya-accent mb-3 uppercase tracking-wider">Field khusus Profesional</p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1">SLA Response Time</label>
+              <input value={form.sla_response_time} onChange={(e) => set("sla_response_time", e.target.value)} placeholder="contoh: 1x24 jam kerja" className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-3 py-2 text-white text-sm focus:border-rasya-accent focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1">SLA Uptime (opsional)</label>
+              <input value={form.sla_uptime} onChange={(e) => set("sla_uptime", e.target.value)} placeholder="contoh: 99.5%" className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-3 py-2 text-white text-sm focus:border-rasya-accent focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1">Non-Compete (bulan, kosongkan jika tidak perlu)</label>
+              <input value={form.non_compete_bulan} onChange={(e) => set("non_compete_bulan", e.target.value)} placeholder="contoh: 6 (enam)" className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-3 py-2 text-white text-sm focus:border-rasya-accent focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1">PIC Data Protection</label>
+              <input value={form.data_protection_pic} onChange={(e) => set("data_protection_pic", e.target.value)} placeholder="PIC perlindungan data" className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-3 py-2 text-white text-sm focus:border-rasya-accent focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1">Eskalasi Tingkat 1 (Operasional)</label>
+              <input value={form.escalation_pic1} onChange={(e) => set("escalation_pic1", e.target.value)} placeholder="contoh: Project Manager" className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-3 py-2 text-white text-sm focus:border-rasya-accent focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1">Eskalasi Tingkat 2 (Manajerial)</label>
+              <input value={form.escalation_pic2} onChange={(e) => set("escalation_pic2", e.target.value)} placeholder="contoh: Direktur" className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-3 py-2 text-white text-sm focus:border-rasya-accent focus:outline-none" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <label className="block text-xs text-zinc-400 mb-1">Detail Milestone (opsional)</label>
+            <textarea value={form.milestone_detail} onChange={(e) => set("milestone_detail", e.target.value)} placeholder="contoh: Milestone 1: Desain mockup; Milestone 2: Development; Milestone 3: Testing & deployment" rows={3} className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-3 py-2 text-white text-sm focus:border-rasya-accent focus:outline-none resize-y" />
+          </div>
+        </div>
+      )}
       {error && <p className="text-sm text-red-400 mb-2">{error}</p>}
       <button
         type="button"
@@ -1568,7 +1700,7 @@ function AdminAgreement({ apiUrl, adminKey }: { apiUrl: string; adminKey: string
         disabled={loading}
         className="rounded-lg bg-rasya-accent px-6 py-3 font-medium text-rasya-dark hover:bg-rasya-accent/90 disabled:opacity-50"
       >
-        {loading ? "Generating..." : "Generate PDF"}
+        {loading ? "Generating..." : `Generate PDF (${form.tier === "profesional" ? "Profesional" : "Standar"})`}
       </button>
 
       <div className="mt-8 pt-6 border-t border-rasya-border">

@@ -1,76 +1,97 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Lang } from "@/lib/translations";
 
+const LOGO = (
+  <>
+    Rasya<span className="text-rasya-accent">.</span>Production
+  </>
+);
+
 export default function Header() {
+  const pathname = usePathname();
+  const isHome = pathname === "/";
   const { lang, setLang, t } = useLanguage();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-rasya-border/50 bg-rasya-dark/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <a
-          href="#hero"
-          className="text-xl font-semibold tracking-tight text-white"
-        >
-          Rasya<span className="text-rasya-accent">.</span>Production
-        </a>
-        <div className="flex items-center gap-4">
-          <nav className="hidden gap-8 md:flex" aria-label="Main">
-            <a
-              href="#about"
-              className="text-sm text-zinc-400 transition hover:text-rasya-accent"
-            >
-              {t("nav_about")}
-            </a>
-            <a
-              href="#services"
-              className="text-sm text-zinc-400 transition hover:text-rasya-accent"
-            >
-              {t("nav_services")}
-            </a>
-            <a
-              href="#porto"
-              className="text-sm text-zinc-400 transition hover:text-rasya-accent"
-            >
-              {t("nav_porto")}
-            </a>
-            <a
-              href="#contact"
-              className="text-sm text-zinc-400 transition hover:text-rasya-accent"
-            >
-              {t("nav_contact")}
-            </a>
-          </nav>
-          <div className="flex rounded-lg border border-rasya-border bg-rasya-surface/80 p-0.5">
-            <button
-              type="button"
-              onClick={() => setLang("id" as Lang)}
-              className={`rounded-md px-2.5 py-1 text-xs font-medium transition sm:px-3 sm:text-sm ${
-                lang === "id"
-                  ? "bg-rasya-accent text-rasya-dark"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-              aria-pressed={lang === "id"}
-              aria-label="Bahasa Indonesia"
-            >
-              ID
-            </button>
-            <button
-              type="button"
-              onClick={() => setLang("en" as Lang)}
-              className={`rounded-md px-2.5 py-1 text-xs font-medium transition sm:px-3 sm:text-sm ${
-                lang === "en"
-                  ? "bg-rasya-accent text-rasya-dark"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-              aria-pressed={lang === "en"}
-              aria-label="English"
-            >
-              EN
-            </button>
+        {isHome ? (
+          <a
+            href="#hero"
+            className="text-xl font-semibold tracking-tight text-white"
+          >
+            {LOGO}
+          </a>
+        ) : (
+          <Link
+            href="/"
+            className="text-xl font-semibold tracking-tight text-white"
+          >
+            {LOGO}
+          </Link>
+        )}
+        {isHome && (
+          <div className="flex items-center gap-4">
+            <nav className="hidden gap-8 md:flex" aria-label="Main">
+              <a
+                href="#about"
+                className="text-sm text-zinc-400 transition hover:text-rasya-accent"
+              >
+                {t("nav_about")}
+              </a>
+              <a
+                href="#services"
+                className="text-sm text-zinc-400 transition hover:text-rasya-accent"
+              >
+                {t("nav_services")}
+              </a>
+              <a
+                href="#porto"
+                className="text-sm text-zinc-400 transition hover:text-rasya-accent"
+              >
+                {t("nav_porto")}
+              </a>
+              <a
+                href="#contact"
+                className="text-sm text-zinc-400 transition hover:text-rasya-accent"
+              >
+                {t("nav_contact")}
+              </a>
+            </nav>
+            <div className="flex rounded-lg border border-rasya-border bg-rasya-surface/80 p-0.5">
+              <button
+                type="button"
+                onClick={() => setLang("id" as Lang)}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition sm:px-3 sm:text-sm ${
+                  lang === "id"
+                    ? "bg-rasya-accent text-rasya-dark"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+                aria-pressed={lang === "id"}
+                aria-label="Bahasa Indonesia"
+              >
+                ID
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang("en" as Lang)}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition sm:px-3 sm:text-sm ${
+                  lang === "en"
+                    ? "bg-rasya-accent text-rasya-dark"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+                aria-pressed={lang === "en"}
+                aria-label="English"
+              >
+                EN
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </header>
   );

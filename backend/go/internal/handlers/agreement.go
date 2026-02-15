@@ -58,13 +58,25 @@ func AgreementPDF(w http.ResponseWriter, r *http.Request) {
 	if data.KeterlambatanHari == "" {
 		data.KeterlambatanHari = "14 (empat belas)"
 	}
+	if data.Tier == "" {
+		data.Tier = "standar"
+	}
 
+	// GenerateAgreementPDF routes to Full or Lite based on tier
 	pdfBytes, err := pdf.GenerateAgreementPDF(&data)
 	if err != nil {
 		http.Error(w, `{"ok":false,"message":"failed to generate PDF"}`, http.StatusInternalServerError)
 		return
 	}
-	filename := "perjanjian-pemberian-jasa.pdf"
+
+	// Build filename
+	var tierLabel string
+	if strings.ToLower(data.Tier) == "profesional" {
+		tierLabel = "profesional"
+	} else {
+		tierLabel = "standar"
+	}
+	filename := "perjanjian-jasa-" + tierLabel + ".pdf"
 	if data.NomorPerjanjian != "" {
 		safe := strings.Map(func(r rune) rune {
 			if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_' {
@@ -73,11 +85,93 @@ func AgreementPDF(w http.ResponseWriter, r *http.Request) {
 			return -1
 		}, data.NomorPerjanjian)
 		if safe != "" {
-			filename = safe + ".pdf"
+			filename = safe + "-" + tierLabel + ".pdf"
 		}
 	}
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+"\"")
+	w.Header().Set("Content-Length", strconv.Itoa(len(pdfBytes)))
+	w.WriteHeader(http.StatusOK)
+	w.Write(pdfBytes)
+}
+
+// AgreementSamplePDF handles GET /api/admin/agreement/sample?tier=standar|profesional
+func AgreementSamplePDF(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	tier := strings.ToLower(r.URL.Query().Get("tier"))
+	if tier != "profesional" {
+		tier = "standar"
+	}
+
+	now := time.Now()
+	data := &pdf.AgreementData{
+		Tier:                 tier,
+		NomorPerjanjian:      "001/RP-PJ/I/2026",
+		Tanggal:              now.Format("2 January 2006"),
+		Hari:                 now.Format("Monday"),
+		HariNum:              now.Format("2"),
+		Bulan:                now.Format("January"),
+		Tahun:                now.Format("2006"),
+		Tempat:               "Jakarta",
+		P1Nama:               "[Nama Penyedia Jasa]",
+		P1Alamat:             "[Alamat]",
+		P1Email:              "[email@contoh.com]",
+		P1Telepon:            "[No. Telepon / WhatsApp]",
+		P2Nama:               "[Nama / Nama Perusahaan Klien]",
+		P2Jabatan:            "[Jabatan jika ada]",
+		P2Alamat:             "[Alamat klien]",
+		P2Email:              "[email klien]",
+		P2Telepon:            "[No. Telepon klien]",
+		NilaiProyekAngka:     "5.000.000",
+		NilaiProyekTerbilang: "Lima juta rupiah",
+		DPPercent:            "30",
+		DPAmount:             "1.500.000",
+		Termin2Percent:       "40",
+		Termin2Amount:        "2.000.000",
+		Termin2Waktu:         "Saat progress 50%",
+		PelunasanPercent:     "30",
+		PelunasanAmount:      "1.500.000",
+		BankName:             "Bank Contoh",
+		BankNumber:           "1234567890",
+		BankAccount:          "Rasya Production",
+		KeterlambatanHari:    "14 (empat belas)",
+		RevisiPutaran:        "2 (dua)",
+		RevisiHari:           "7 (tujuh)",
+		KonfirmasiHari:       "5",
+		SerahTerimaHari:      "7 (tujuh)",
+		TanggungJawabHari:    "14 (empat belas)",
+		PemutusanHari:        "14 (empat belas)",
+	}
+
+	// Extra sample data for profesional tier
+	if tier == "profesional" {
+		data.SLAResponseTime = "1x24 jam kerja"
+		data.SLAUptime = "99.5%"
+		data.MilestoneDetail = "Milestone 1: Desain mockup; Milestone 2: Development; Milestone 3: Testing & deployment"
+		data.NonCompeteBulan = "" // opsional, kosong di sample
+		data.DataProtectionPIC = "[PIC Data Protection]"
+		data.EscalationPIC1 = "[Project Manager - Tingkat Operasional]"
+		data.EscalationPIC2 = "[Direktur - Tingkat Manajerial]"
+	}
+
+	pdfBytes, err := pdf.GenerateAgreementPDF(data)
+	if err != nil {
+		http.Error(w, `{"ok":false,"message":"failed to generate sample"}`, http.StatusInternalServerError)
+		return
+	}
+
+	var label string
+	if tier == "profesional" {
+		label = "contoh-perjanjian-jasa-profesional.pdf"
+	} else {
+		label = "contoh-perjanjian-jasa-standar.pdf"
+	}
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", "inline; filename=\""+label+"\"")
 	w.Header().Set("Content-Length", strconv.Itoa(len(pdfBytes)))
 	w.WriteHeader(http.StatusOK)
 	w.Write(pdfBytes)

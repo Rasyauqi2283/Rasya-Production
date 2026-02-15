@@ -98,7 +98,7 @@ export default function RootLayout({
           <main>{children}</main>
           <footer className="border-t border-rasya-border bg-rasya-surface py-8">
             <div className="mx-auto max-w-6xl px-6 text-center text-sm text-zinc-500">
-              © {new Date().getFullYear()} Rasya Production. All rights reserved.
+              © 2026 Rasya Production V 1.0. All rights reserved.
             </div>
           </footer>
         </LanguageProvider>

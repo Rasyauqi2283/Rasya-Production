@@ -97,6 +97,7 @@ func main() {
 		r.Get("/api/admin/orders", handlers.OrdersListAll)
 		r.Post("/api/admin/orders", handlers.OrdersAdd)
 		r.Delete("/api/admin/orders", handlers.OrdersDelete)
+		r.Get("/api/admin/agreement/sample", handlers.AgreementSamplePDF)
 		r.Post("/api/admin/agreement/pdf", handlers.AgreementPDF)
 		r.Post("/api/admin/taper/otp", handlers.TaperAdminGenerateOTP)
 		r.Get("/api/admin/taper/signed", handlers.TaperAdminListSigned)
