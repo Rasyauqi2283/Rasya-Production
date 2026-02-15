@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+const OTP_LENGTH = 6;
+
 export default function TaperPage() {
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [token, setToken] = useState("");
   const [verifyError, setVerifyError] = useState("");
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [signatureFile, setSignatureFile] = useState<File | null>(null);
@@ -21,10 +24,11 @@ export default function TaperPage() {
     setVerifyError("");
     setVerifyLoading(true);
     try {
+      const otpString = otp.join("").trim();
       const res = await fetch(`${API_URL}/api/taper/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp: otp.trim() }),
+        body: JSON.stringify({ otp: otpString }),
       });
       const data = await res.json();
       if (data.ok && data.token) {
@@ -94,19 +98,51 @@ export default function TaperPage() {
             Masukkan kode OTP yang diberikan admin untuk melanjutkan.
           </p>
           <form onSubmit={handleVerify} className="space-y-4">
-            <input
-              type="text"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              placeholder="Kode OTP (6 digit)"
-              maxLength={8}
-              className="w-full rounded-lg border border-rasya-border bg-rasya-surface px-4 py-3 text-white placeholder-zinc-500 focus:border-rasya-accent focus:outline-none"
-              autoFocus
-            />
+            <div className="flex justify-center gap-2 sm:gap-3">
+              {otp.map((digit, i) => (
+                <input
+                  key={i}
+                  ref={(el) => { inputRefs.current[i] = el; }}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => {
+                    setVerifyError("");
+                    const v = e.target.value.replace(/\D/g, "");
+                    if (v.length > 1) {
+                      const digits = v.slice(0, OTP_LENGTH).split("");
+                      const next = [...otp];
+                      digits.forEach((d, j) => { if (i + j < OTP_LENGTH) next[i + j] = d; });
+                      setOtp(next);
+                      const idx = Math.min(i + digits.length, OTP_LENGTH - 1);
+                      inputRefs.current[idx]?.focus();
+                      return;
+                    }
+                    const next = [...otp];
+                    next[i] = v;
+                    setOtp(next);
+                    if (v && i < OTP_LENGTH - 1) inputRefs.current[i + 1]?.focus();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Backspace" && !otp[i] && i > 0) {
+                      setVerifyError("");
+                      const next = [...otp];
+                      next[i - 1] = "";
+                      setOtp(next);
+                      inputRefs.current[i - 1]?.focus();
+                    }
+                  }}
+                  className="w-11 h-12 sm:w-12 sm:h-14 text-center text-xl font-semibold rounded-lg border border-rasya-border bg-rasya-surface text-white focus:border-rasya-accent focus:outline-none focus:ring-2 focus:ring-rasya-accent/30"
+                  aria-label={`Digit OTP ${i + 1}`}
+                />
+              ))}
+            </div>
             {verifyError && <p className="text-sm text-red-400">{verifyError}</p>}
             <button
               type="submit"
-              disabled={verifyLoading || !otp.trim()}
+              disabled={verifyLoading || otp.join("").length !== OTP_LENGTH}
               className="w-full rounded-lg bg-rasya-accent px-4 py-3 font-medium text-rasya-dark hover:bg-rasya-accent/90 disabled:opacity-50"
             >
               {verifyLoading ? "Memverifikasi..." : "Lanjut"}
