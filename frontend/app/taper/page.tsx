@@ -30,11 +30,19 @@ export default function TaperPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ otp: otpString }),
       });
-      const data = await res.json();
+      let data: { ok?: boolean; token?: string; message?: string } = {};
+      try {
+        data = await res.json();
+      } catch {
+        if (res.status === 401) setVerifyError("OTP tidak valid atau sudah kedaluwarsa.");
+        else setVerifyError("Koneksi gagal. Periksa URL backend.");
+        setVerifyLoading(false);
+        return;
+      }
       if (data.ok && data.token) {
         setToken(data.token);
       } else {
-        setVerifyError(data.message || "OTP tidak valid atau kedaluwarsa.");
+        setVerifyError(data.message || (res.status === 401 ? "OTP tidak valid atau sudah kedaluwarsa." : "Verifikasi gagal."));
       }
     } catch {
       setVerifyError("Koneksi gagal. Periksa URL backend.");

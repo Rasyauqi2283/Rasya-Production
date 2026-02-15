@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"image/png"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -64,6 +65,7 @@ func TaperVerify(w http.ResponseWriter, r *http.Request) {
 	ok, label := TaperStore.VerifyOTP(req.OTP)
 	_ = label
 	if !ok {
+		log.Printf("[taper] verify failed: OTP len=%d (invalid or expired)", len(req.OTP))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
 		_ = json.NewEncoder(w).Encode(TaperVerifyResponse{OK: false, Msg: "OTP tidak valid atau sudah kedaluwarsa"})
@@ -167,7 +169,10 @@ func TaperSign(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"ok": "false", "message": "Token tidak valid atau kedaluwarsa"})
 		return
 	}
-	_, label := TaperStore.VerifyOTP(otpCode)
+	var label string
+	if TaperStore != nil {
+		_, label = TaperStore.VerifyOTP(otpCode)
+	}
 
 	// Parse multipart: pdf, signature (field names from client: pdf, signature)
 	const maxMem = 32 << 20 // 32 MB
@@ -232,9 +237,10 @@ func TaperSign(w http.ResponseWriter, r *http.Request) {
 
 	signedPDF, err := overlaySignatureOnPDF(pdfBytes, processedSig)
 	if err != nil {
+		log.Printf("[taper] sign overlay error: %v", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"ok": "false", "message": "Gagal menempatkan tanda tangan pada PDF"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"ok": "false", "message": "Gagal menempatkan tanda tangan pada PDF. Pastikan file PDF tidak terkunci dan format tanda tangan PNG/JPG valid."})
 		return
 	}
 
@@ -292,31 +298,43 @@ func processSignatureImage(data []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// taperWorkDir returns a writable directory for temp PDF/signature files (e.g. on Koyeb /tmp can be restricted).
+func taperWorkDir() string {
+	if TaperCfg != nil && TaperCfg.UploadDir != "" {
+		workDir := filepath.Join(TaperCfg.UploadDir, "taper_tmp")
+		if err := os.MkdirAll(workDir, 0755); err == nil {
+			return workDir
+		}
+	}
+	return os.TempDir()
+}
+
 // overlaySignatureOnPDF uses pdfcpu to add signature image as watermark on last page.
 func overlaySignatureOnPDF(pdfBytes []byte, signaturePNG []byte) ([]byte, error) {
-	// Use pdfcpu to add image watermark on last page
-	// We need temp files: pdf, signature image, then AddWatermarks and read output
-	dir := os.TempDir()
-	pdfPath := filepath.Join(dir, "taper-in-"+fmt.Sprintf("%d", time.Now().UnixNano())+".pdf")
-	sigPath := filepath.Join(dir, "taper-sig-"+fmt.Sprintf("%d", time.Now().UnixNano())+".png")
-	outPath := filepath.Join(dir, "taper-out-"+fmt.Sprintf("%d", time.Now().UnixNano())+".pdf")
+	dir := taperWorkDir()
+	ts := time.Now().UnixNano()
+	pdfPath := filepath.Join(dir, fmt.Sprintf("taper-in-%d.pdf", ts))
+	sigPath := filepath.Join(dir, fmt.Sprintf("taper-sig-%d.png", ts))
+	outPath := filepath.Join(dir, fmt.Sprintf("taper-out-%d.pdf", ts))
 	defer os.Remove(pdfPath)
 	defer os.Remove(sigPath)
 	defer os.Remove(outPath)
 
 	if err := os.WriteFile(pdfPath, pdfBytes, 0644); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("write pdf temp: %w", err)
 	}
 	if err := os.WriteFile(sigPath, signaturePNG, 0644); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("write sig temp: %w", err)
 	}
 
-	// pdfcpu api: AddWatermarksFile(inFile, outFile, selectedPages, onTop, imageFile, desc, conf)
-	// selectedPages "-1" = last page; desc e.g. "pos:br, sc:0.2" = bottom right, scale 0.2
 	if err := addImageWatermarkLastPage(pdfPath, outPath, sigPath); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("pdfcpu watermark: %w", err)
 	}
-	return os.ReadFile(outPath)
+	outBytes, err := os.ReadFile(outPath)
+	if err != nil {
+		return nil, fmt.Errorf("read output pdf: %w", err)
+	}
+	return outBytes, nil
 }
 
 // addImageWatermarkLastPage adds image watermark to last page using pdfcpu (page "l" = last).
@@ -326,6 +344,6 @@ func addImageWatermarkLastPage(inFile, outFile, imageFile string) error {
 
 func addImageWatermarkPDFCPU(inFile, outFile, imageFile string, selectedPages []string) error {
 	conf := model.NewDefaultConfiguration()
-	// pos:br = bottom right, sc:0.2 = scale 20%, onTop = true so signature is visible (stamp)
-	return api.AddImageWatermarksFile(inFile, outFile, selectedPages, true, imageFile, "pos:br, sc:0.2", conf)
+	// pos:br = bottom right, sc: 0.2 = scale 20% (relative), onTop = true so signature is visible
+	return api.AddImageWatermarksFile(inFile, outFile, selectedPages, true, imageFile, "pos: br, sc: 0.2", conf)
 }
