@@ -3,6 +3,7 @@
 import AntrianLayanan from "@/components/AntrianLayanan";
 import DonateForm from "@/components/DonateForm";
 import JasaLanes from "@/components/JasaLanes";
+import LayananPreviewCard from "@/components/LayananPreviewCard";
 import LayananSection from "@/components/LayananSection";
 import PortoList from "@/components/PortoList";
 import { useLanguage } from "@/context/LanguageContext";
@@ -85,6 +86,30 @@ export default function Home() {
       <LayananSection />
 
       <AntrianLayanan apiUrl={API_URL} />
+
+      <section
+        id="layanan-preview"
+        className="border-t border-rasya-border bg-rasya-surface py-24 px-6"
+        aria-labelledby="layanan-preview-heading"
+      >
+        <div className="mx-auto max-w-6xl">
+          <h2
+            id="layanan-preview-heading"
+            className="mb-4 font-mono text-sm uppercase tracking-widest text-rasya-accent"
+          >
+            Layanan Preview
+          </h2>
+          <h3 className="mb-8 text-3xl font-bold text-white sm:text-4xl">
+            Web & Digital Preview
+          </h3>
+          <p className="mb-8 max-w-2xl text-zinc-400">
+            {lang === "en"
+              ? "Demo page for service templates. Choose a theme to see a more serious preview design."
+              : "Halaman demo untuk template layanan. Pilih salah satu tema untuk melihat desain preview yang lebih serius."}
+          </p>
+          <LayananPreviewCard />
+        </div>
+      </section>
 
       <section
         id="porto"

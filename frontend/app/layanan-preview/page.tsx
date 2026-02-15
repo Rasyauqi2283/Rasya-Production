@@ -22,6 +22,12 @@ export default function LayananPreviewIndexPage() {
   return (
     <main className="min-h-screen bg-rasya-dark px-6 pb-20 pt-28">
       <div className="mx-auto max-w-6xl">
+        <Link
+          href="/"
+          className="mb-6 inline-block text-sm text-zinc-400 transition hover:text-rasya-accent"
+        >
+          ← Kembali ke laman utama
+        </Link>
         <p className="mb-3 font-mono text-xs uppercase tracking-widest text-rasya-accent">
           Layanan Preview
         </p>

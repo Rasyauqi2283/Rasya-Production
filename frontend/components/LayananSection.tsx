@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { getServiceDisplay } from "@/lib/serviceI18n";
-import LayananPreviewCard from "@/components/LayananPreviewCard";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -155,7 +154,6 @@ export default function LayananSection() {
                 </div>
               </div>
             ); })}
-            {categoryId === "Web & Digital" && <LayananPreviewCard />}
           </div>
         )}
       </div>
