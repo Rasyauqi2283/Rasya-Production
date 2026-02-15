@@ -20,7 +20,7 @@ const SKILL_RATINGS: { name: string; rating: number; max?: number }[] = [
   { name: "Figma / UI", rating: 4 },
   { name: "Video editing", rating: 3 },
   { name: "Content writing", rating: 4 },
-].map((s) => ({ ...s, max: s.max ?? 5 }));
+].map((s) => ({ ...s, max: 5 }));
 
 // Parse teks harga Indonesia (e.g. "400 ribu", "1,5 jt") ke angka. Return null jika tidak bisa parse.
 function parsePriceIdr(text: string): number | null {
