@@ -285,8 +285,9 @@ function AdminLayanan({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }
   const [editPriceAfterDiscount, setEditPriceAfterDiscount] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState("");
+  const [daftarOpen, setDaftarOpen] = useState(false);
 
-  // Auto-hitung harga setelah diskon dari harga awal + diskon %
+  // Auto-hitung harga setelah diskon dari nominal mulai dari + diskon %
   useEffect(() => {
     if (!editing) return;
     const pct = editDiscountPercent.trim() === "" ? 0 : Math.min(100, Math.max(0, parseInt(editDiscountPercent, 10) || 0));
@@ -480,7 +481,7 @@ function AdminLayanan({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }
           type="text"
           value={priceAwal}
           onChange={(e) => setPriceAwal(e.target.value)}
-          placeholder="Price awal (mis. 200 ribu (harga awal) atau Sesuai brief)"
+          placeholder="Mulai dari (mis. 200 ribu atau Sesuai brief)"
           className="rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white placeholder-zinc-500 focus:border-rasya-accent focus:outline-none"
         />
         <input
@@ -500,102 +501,121 @@ function AdminLayanan({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }
         </button>
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="text-sm text-zinc-400">Daftar layanan (semua yang terdaftar):</span>
-        {services.length > 0 && (
-          <>
-            <button
-              type="button"
-              onClick={selectAll}
-              className="text-xs rounded border border-rasya-border px-2 py-1 text-zinc-400 hover:border-rasya-accent/50 hover:text-white"
-            >
-              {selectedIds.size === services.length ? "Batal pilih semua" : "Pilih semua"}
-            </button>
+      <div className="rounded-lg border border-rasya-border bg-rasya-dark/40 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setDaftarOpen((o) => !o)}
+          className="flex w-full items-center justify-between px-4 py-3 text-left text-sm text-zinc-300 hover:bg-rasya-dark/60 transition"
+          aria-expanded={daftarOpen}
+        >
+          <span>
+            Daftar layanan (semua yang terdaftar): {services.length} layanan
             {selectedIds.size > 0 && (
-              <>
-                <button
-                  type="button"
-                  onClick={bulkClose}
-                  className="text-xs rounded border border-amber-500/50 px-2 py-1 text-amber-400 hover:bg-amber-500/20"
-                >
-                  Tutup yang dipilih
-                </button>
-                <button
-                  type="button"
-                  onClick={bulkDelete}
-                  className="text-xs rounded border border-red-500/50 px-2 py-1 text-red-400 hover:bg-red-500/20"
-                >
-                  Hapus yang dipilih
-                </button>
-              </>
+              <span className="ml-2 text-rasya-accent">— {selectedIds.size} dipilih</span>
             )}
-          </>
+          </span>
+          <span className="shrink-0 text-zinc-500" aria-hidden>
+            {daftarOpen ? "▼ Tutup" : "▶ Buka"}
+          </span>
+        </button>
+        {daftarOpen && (
+          <div className="border-t border-rasya-border px-4 pb-4 pt-3">
+            {services.length > 0 && (
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={selectAll}
+                  className="text-xs rounded border border-rasya-border px-2 py-1 text-zinc-400 hover:border-rasya-accent/50 hover:text-white"
+                >
+                  {selectedIds.size === services.length ? "Batal pilih semua" : "Pilih semua"}
+                </button>
+                {selectedIds.size > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={bulkClose}
+                      className="text-xs rounded border border-amber-500/50 px-2 py-1 text-amber-400 hover:bg-amber-500/20"
+                    >
+                      Tutup yang dipilih
+                    </button>
+                    <button
+                      type="button"
+                      onClick={bulkDelete}
+                      className="text-xs rounded border border-red-500/50 px-2 py-1 text-red-400 hover:bg-red-500/20"
+                    >
+                      Hapus yang dipilih
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+            <ul className="space-y-2">
+              {services.map((s) => (
+                <li
+                  key={s.id}
+                  className={`flex items-center gap-3 rounded-lg border border-rasya-border p-3 ${
+                    s.closed ? "bg-rasya-dark/60 opacity-75" : "bg-rasya-dark"
+                  }`}
+                >
+                  <label className="flex shrink-0 cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(s.id)}
+                      onChange={() => toggleSelect(s.id)}
+                      className="h-4 w-4 rounded border-rasya-border bg-rasya-card text-rasya-accent focus:ring-rasya-accent"
+                    />
+                    <span className="sr-only">Pilih {s.title}</span>
+                  </label>
+                  <div className="min-w-0 flex-1">
+                    <p className={`font-medium ${s.closed ? "text-zinc-500 line-through" : "text-white"}`}>
+                      {s.title}
+                    </p>
+                    {s.tag && (
+                      <p className="text-xs text-rasya-accent font-mono">{s.tag}</p>
+                    )}
+                    {s.price_awal && (
+                      <p className="text-sm text-rasya-accent">{s.price_awal}</p>
+                    )}
+                    {s.desc && (
+                      <p className="text-sm text-zinc-500 truncate max-w-md">{s.desc}</p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(s)}
+                      className="rounded border border-rasya-accent/50 px-2 py-1 text-xs font-medium text-rasya-accent hover:bg-rasya-accent/20"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleClose(s.id, !!s.closed)}
+                      className={`rounded border px-2 py-1 text-xs font-medium ${
+                        s.closed
+                          ? "border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20"
+                          : "border-amber-500/50 text-amber-400 hover:bg-amber-500/20"
+                      }`}
+                    >
+                      {s.closed ? "Buka" : "Tutup"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => del(s.id)}
+                      className="rounded border border-red-500/50 px-2 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                </li>
+              ))}
+              {services.length === 0 && (
+                <p className="text-sm text-zinc-500 py-2">Belum ada layanan. Tambah dari form di atas.</p>
+              )}
+            </ul>
+          </div>
         )}
       </div>
-      <ul className="space-y-2">
-        {services.map((s) => (
-          <li
-            key={s.id}
-            className={`flex items-center gap-3 rounded-lg border border-rasya-border p-3 ${
-              s.closed ? "bg-rasya-dark/60 opacity-75" : "bg-rasya-dark"
-            }`}
-          >
-            <label className="flex shrink-0 cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={selectedIds.has(s.id)}
-                onChange={() => toggleSelect(s.id)}
-                className="h-4 w-4 rounded border-rasya-border bg-rasya-card text-rasya-accent focus:ring-rasya-accent"
-              />
-              <span className="sr-only">Pilih {s.title}</span>
-            </label>
-            <div className="min-w-0 flex-1">
-              <p className={`font-medium ${s.closed ? "text-zinc-500 line-through" : "text-white"}`}>
-                {s.title}
-              </p>
-              {s.tag && (
-                <p className="text-xs text-rasya-accent font-mono">{s.tag}</p>
-              )}
-              {s.price_awal && (
-                <p className="text-sm text-rasya-accent">{s.price_awal}</p>
-              )}
-              {s.desc && (
-                <p className="text-sm text-zinc-500 truncate max-w-md">{s.desc}</p>
-              )}
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <button
-                type="button"
-                onClick={() => openEdit(s)}
-                className="rounded border border-rasya-accent/50 px-2 py-1 text-xs font-medium text-rasya-accent hover:bg-rasya-accent/20"
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => toggleClose(s.id, !!s.closed)}
-                className={`rounded border px-2 py-1 text-xs font-medium ${
-                  s.closed
-                    ? "border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20"
-                    : "border-amber-500/50 text-amber-400 hover:bg-amber-500/20"
-                }`}
-              >
-                {s.closed ? "Buka" : "Tutup"}
-              </button>
-              <button
-                type="button"
-                onClick={() => del(s.id)}
-                className="rounded border border-red-500/50 px-2 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20"
-              >
-                Hapus
-              </button>
-            </div>
-          </li>
-        ))}
-        {services.length === 0 && (
-          <p className="text-sm text-zinc-500">Belum ada layanan. Tambah dari form di atas.</p>
-        )}
-      </ul>
 
       {/* Modal Edit Layanan */}
       {editing && (
@@ -635,12 +655,12 @@ function AdminLayanan({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }
                 />
               </div>
               <div>
-                <label className="block text-xs text-zinc-500 mb-1">Harga awal</label>
+                <label className="block text-xs text-zinc-500 mb-1">Mulai dari</label>
                 <input
                   type="text"
                   value={editPriceAwal}
                   onChange={(e) => setEditPriceAwal(e.target.value)}
-                  placeholder="Mis. 400 ribu (harga awal) atau Sesuai brief"
+                  placeholder="Mis. 400 ribu (mulai dari) atau Sesuai brief"
                   className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white focus:border-rasya-accent focus:outline-none"
                 />
               </div>
@@ -663,7 +683,7 @@ function AdminLayanan({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }
                     type="text"
                     value={editPriceAfterDiscount}
                     onChange={(e) => setEditPriceAfterDiscount(e.target.value)}
-                    placeholder="Otomatis dari harga awal + diskon % (bisa diedit)"
+                    placeholder="Otomatis dari nominal mulai dari + diskon % (bisa diedit)"
                     className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white focus:border-rasya-accent focus:outline-none"
                   />
                 </div>
@@ -1376,6 +1396,12 @@ type SignedDocItem = {
   download_url?: string;
 };
 
+type AgreementGeneratedItem = {
+  id: string;
+  filename: string;
+  created_at: string;
+};
+
 function AdminAgreement({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) {
   const [form, setForm] = useState<AgreementForm>(defaultAgreement);
   const [loading, setLoading] = useState(false);
@@ -1387,6 +1413,8 @@ function AdminAgreement({ apiUrl, adminKey }: { apiUrl: string; adminKey: string
   const [otpLoading, setOtpLoading] = useState(false);
   const [signedDocs, setSignedDocs] = useState<SignedDocItem[]>([]);
   const [taperBaseUrl, setTaperBaseUrl] = useState("");
+  const [agreementGeneratedDocs, setAgreementGeneratedDocs] = useState<AgreementGeneratedItem[]>([]);
+  const [showAgreementDocsOverlay, setShowAgreementDocsOverlay] = useState(false);
   useEffect(() => {
     if (typeof window !== "undefined") setTaperBaseUrl(window.location.origin);
   }, []);
@@ -1454,13 +1482,23 @@ function AdminAgreement({ apiUrl, adminKey }: { apiUrl: string; adminKey: string
         setError(t || "Gagal generate PDF");
         return;
       }
+      let filename = "perjanjian-pemberian-jasa.pdf";
+      const disp = res.headers.get("Content-Disposition");
+      if (disp) {
+        const m = disp.match(/filename="?([^"]+)"?/);
+        if (m && m[1]) filename = m[1].trim();
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "perjanjian-pemberian-jasa.pdf";
+      a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
+      setAgreementGeneratedDocs((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), filename, created_at: new Date().toISOString() },
+      ]);
     } catch (e) {
       setError("Koneksi gagal");
     } finally {
@@ -1563,6 +1601,44 @@ function AdminAgreement({ apiUrl, adminKey }: { apiUrl: string; adminKey: string
             <p className="text-sm text-zinc-400 break-all mt-2">
               Link untuk client: <a href={taperBaseUrl ? taperBaseUrl + "/taper" : "#"} target="_blank" rel="noopener noreferrer" className="text-rasya-accent underline">{taperBaseUrl || "..."}/taper</a>
             </p>
+          </div>
+        )}
+
+        <h3 className="text-md font-semibold text-white mt-6 mb-2">Dokumen terbuat dari perjanjian</h3>
+        <button
+          type="button"
+          onClick={() => setShowAgreementDocsOverlay(true)}
+          className="flex items-center gap-3 rounded-lg border border-rasya-border bg-rasya-dark/50 px-4 py-3 text-left w-full max-w-xs hover:bg-rasya-dark hover:border-rasya-accent/50 transition-colors"
+        >
+          <svg className="w-8 h-8 text-rasya-accent shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+          </svg>
+          <span className="text-white font-medium">Dokumen terbuat dari perjanjian</span>
+          {agreementGeneratedDocs.length > 0 && (
+            <span className="text-zinc-500 text-sm ml-auto">({agreementGeneratedDocs.length})</span>
+          )}
+        </button>
+
+        {showAgreementDocsOverlay && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={() => setShowAgreementDocsOverlay(false)}>
+            <div className="rounded-xl border border-rasya-border bg-rasya-surface p-6 max-w-md w-full shadow-xl max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-semibold text-white">Dokumen terbuat dari perjanjian</h4>
+                <button type="button" onClick={() => setShowAgreementDocsOverlay(false)} className="text-zinc-400 hover:text-white p-1">✕</button>
+              </div>
+              {agreementGeneratedDocs.length === 0 ? (
+                <p className="text-sm text-zinc-500">Belum ada. Setelah Anda mengklik Generate PDF di atas, dokumen akan tercatat di sini (file terunduh ke perangkat Anda).</p>
+              ) : (
+                <ul className="space-y-2 overflow-y-auto flex-1 min-h-0">
+                  {agreementGeneratedDocs.map((d) => (
+                    <li key={d.id} className="flex items-center gap-2 rounded-lg border border-rasya-border bg-rasya-dark/30 px-3 py-2 text-sm">
+                      <span className="text-rasya-accent font-mono truncate flex-1">{d.filename}</span>
+                      <span className="text-zinc-500 shrink-0">{new Date(d.created_at).toLocaleString("id-ID")}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         )}
 
