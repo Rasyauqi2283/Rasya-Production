@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
+import { getServiceDisplay } from "@/lib/serviceI18n";
 
 type Service = { id: string; title: string; desc: string };
 
@@ -11,6 +13,7 @@ const DEFAULT_SERVICES: Service[] = [
 ];
 
 export default function ServicesList({ apiUrl }: { apiUrl: string }) {
+  const { t } = useLanguage();
   const [services, setServices] = useState<Service[]>(DEFAULT_SERVICES);
   const [loading, setLoading] = useState(true);
 
@@ -35,15 +38,17 @@ export default function ServicesList({ apiUrl }: { apiUrl: string }) {
 
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {services.map((item) => (
+      {services.map((item) => {
+        const { title: displayTitle, desc: displayDesc } = getServiceDisplay(t, item.title, item.desc || "");
+        return (
         <div
           key={item.id}
           className="rounded-xl border border-rasya-border bg-rasya-card p-6 transition hover:border-rasya-accent/30"
         >
-          <h4 className="mb-2 text-lg font-semibold text-white">{item.title}</h4>
-          <p className="text-sm text-zinc-400">{item.desc}</p>
+          <h4 className="mb-2 text-lg font-semibold text-white">{displayTitle}</h4>
+          <p className="text-sm text-zinc-400">{displayDesc}</p>
         </div>
-      ))}
+      ); })}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { getServiceDisplay } from "@/lib/serviceI18n";
 import LayananPreviewCard from "@/components/LayananPreviewCard";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -121,16 +122,18 @@ export default function LayananSection() {
           <p className="text-sm text-zinc-500">{t("services_empty")}</p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {(category?.services ?? []).map((item) => (
+            {(category?.services ?? []).map((item) => {
+              const { title: displayTitle, desc: displayDesc } = getServiceDisplay(t, item.title, item.desc || "");
+              return (
               <div
                 key={item.id}
                 className="rounded-xl border border-rasya-border bg-rasya-card p-6 transition hover:border-rasya-accent/30 flex flex-col"
               >
                 <h4 className="mb-3 text-lg font-semibold text-white">
-                  {item.title}
+                  {displayTitle}
                 </h4>
                 <p className="mb-4 text-sm text-zinc-400 leading-relaxed flex-1">
-                  {item.desc || "—"}
+                  {displayDesc || "—"}
                 </p>
                 <div className="text-sm pt-2 border-t border-rasya-border">
                   {item.closed ? (
@@ -151,7 +154,7 @@ export default function LayananSection() {
                   )}
                 </div>
               </div>
-            ))}
+            ); })}
             {categoryId === "Web & Digital" && <LayananPreviewCard />}
           </div>
         )}

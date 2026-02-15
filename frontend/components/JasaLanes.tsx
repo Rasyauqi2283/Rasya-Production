@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { getServiceDisplay } from "@/lib/serviceI18n";
 
 type Skill = { label: string; done: boolean };
 
@@ -139,7 +140,8 @@ export default function JasaLanes() {
       .finally(() => setLoading(false));
   }, []);
 
-  const rows = buildRows(skills);
+  const displaySkills = skills.map((s) => ({ ...s, label: getServiceDisplay(t, s.label, "").title }));
+  const rows = buildRows(displaySkills);
   const hasSkills = skills.length > 0;
 
   return (
