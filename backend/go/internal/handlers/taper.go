@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,6 +30,12 @@ var TaperStore *store.TaperStore
 var TaperCfg *config.Config
 
 const taperTokenExpiryMinutes = 20
+
+type signaturePlacement struct {
+	XRatio float64
+	YRatio float64
+	Scale  float64
+}
 
 // TaperVerifyRequest is the body for POST /api/taper/verify.
 type TaperVerifyRequest struct {
@@ -225,6 +232,13 @@ func TaperSign(w http.ResponseWriter, r *http.Request) {
 	defer pdfFile.Close()
 	defer sigFile.Close()
 
+	previewOnly := parseBool(r.FormValue("preview_only"))
+	placement := parseSignaturePlacement(
+		r.FormValue("x_ratio"),
+		r.FormValue("y_ratio"),
+		r.FormValue("scale_ratio"),
+	)
+
 	pdfBytes, _ := io.ReadAll(pdfFile)
 	sigBytes, _ := io.ReadAll(sigFile)
 	processedSig, err := processSignatureImage(sigBytes)
@@ -235,12 +249,26 @@ func TaperSign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	signedPDF, err := overlaySignatureOnPDF(pdfBytes, processedSig)
+	signedPDF, err := overlaySignatureOnPDF(pdfBytes, processedSig, placement)
 	if err != nil {
 		log.Printf("[taper] sign overlay error: %v", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{"ok": "false", "message": "Gagal menempatkan tanda tangan pada PDF. Pastikan file PDF tidak terkunci dan format tanda tangan PNG/JPG valid."})
+		return
+	}
+
+	baseName := "perjanjian-ditandatangani"
+	if pdfHeader != nil && pdfHeader.Filename != "" {
+		baseName = strings.TrimSuffix(filepath.Base(pdfHeader.Filename), filepath.Ext(pdfHeader.Filename)) + "-ditandatangani"
+	}
+
+	// Preview mode: return rendered PDF only, without saving into admin archive.
+	if previewOnly {
+		w.Header().Set("Content-Type", "application/pdf")
+		w.Header().Set("Content-Disposition", "inline; filename=\"preview-"+baseName+".pdf\"")
+		w.WriteHeader(http.StatusOK)
+		w.Write(signedPDF)
 		return
 	}
 
@@ -251,10 +279,6 @@ func TaperSign(w http.ResponseWriter, r *http.Request) {
 	}
 	signedDir := filepath.Join(uploadDir, "signed")
 	_ = os.MkdirAll(signedDir, 0755)
-	baseName := "perjanjian-ditandatangani"
-	if pdfHeader != nil && pdfHeader.Filename != "" {
-		baseName = strings.TrimSuffix(filepath.Base(pdfHeader.Filename), filepath.Ext(pdfHeader.Filename)) + "-ditandatangani"
-	}
 	id := time.Now().UTC().Format("20060102150405")
 	storedName := id + "-" + baseName + ".pdf"
 	storedPath := filepath.Join(signedDir, storedName)
@@ -269,6 +293,39 @@ func TaperSign(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+baseName+".pdf\"")
 	w.WriteHeader(http.StatusOK)
 	w.Write(signedPDF)
+}
+
+func parseBool(v string) bool {
+	v = strings.TrimSpace(strings.ToLower(v))
+	return v == "1" || v == "true" || v == "yes" || v == "y"
+}
+
+func parseSignaturePlacement(xRaw, yRaw, sRaw string) signaturePlacement {
+	p := signaturePlacement{
+		XRatio: 0.72, // default near bottom-right
+		YRatio: 0.82,
+		Scale:  0.20,
+	}
+	if x, err := strconv.ParseFloat(strings.TrimSpace(xRaw), 64); err == nil {
+		p.XRatio = clampFloat(x, 0.0, 1.0)
+	}
+	if y, err := strconv.ParseFloat(strings.TrimSpace(yRaw), 64); err == nil {
+		p.YRatio = clampFloat(y, 0.0, 1.0)
+	}
+	if s, err := strconv.ParseFloat(strings.TrimSpace(sRaw), 64); err == nil {
+		p.Scale = clampFloat(s, 0.08, 0.5)
+	}
+	return p
+}
+
+func clampFloat(v, min, max float64) float64 {
+	if v < min {
+		return min
+	}
+	if v > max {
+		return max
+	}
+	return v
 }
 
 // processSignatureImage converts to grayscale and removes light background; returns PNG bytes.
@@ -310,7 +367,7 @@ func taperWorkDir() string {
 }
 
 // overlaySignatureOnPDF uses pdfcpu to add signature image as watermark on last page.
-func overlaySignatureOnPDF(pdfBytes []byte, signaturePNG []byte) ([]byte, error) {
+func overlaySignatureOnPDF(pdfBytes []byte, signaturePNG []byte, placement signaturePlacement) ([]byte, error) {
 	dir := taperWorkDir()
 	ts := time.Now().UnixNano()
 	pdfPath := filepath.Join(dir, fmt.Sprintf("taper-in-%d.pdf", ts))
@@ -327,7 +384,7 @@ func overlaySignatureOnPDF(pdfBytes []byte, signaturePNG []byte) ([]byte, error)
 		return nil, fmt.Errorf("write sig temp: %w", err)
 	}
 
-	if err := addImageWatermarkLastPage(pdfPath, outPath, sigPath); err != nil {
+	if err := addImageWatermarkLastPage(pdfPath, outPath, sigPath, placement); err != nil {
 		return nil, fmt.Errorf("pdfcpu watermark: %w", err)
 	}
 	outBytes, err := os.ReadFile(outPath)
@@ -338,12 +395,23 @@ func overlaySignatureOnPDF(pdfBytes []byte, signaturePNG []byte) ([]byte, error)
 }
 
 // addImageWatermarkLastPage adds image watermark to last page using pdfcpu (page "l" = last).
-func addImageWatermarkLastPage(inFile, outFile, imageFile string) error {
-	return addImageWatermarkPDFCPU(inFile, outFile, imageFile, []string{"l"})
+func addImageWatermarkLastPage(inFile, outFile, imageFile string, placement signaturePlacement) error {
+	desc := watermarkDescriptionFromPlacement(placement)
+	return addImageWatermarkPDFCPU(inFile, outFile, imageFile, []string{"l"}, desc)
 }
 
-func addImageWatermarkPDFCPU(inFile, outFile, imageFile string, selectedPages []string) error {
+func addImageWatermarkPDFCPU(inFile, outFile, imageFile string, selectedPages []string, description string) error {
 	conf := model.NewDefaultConfiguration()
-	// position:br = bottom right, scalefactor:0.2 rel = 20% (no ambiguous "sc" prefix)
-	return api.AddImageWatermarksFile(inFile, outFile, selectedPages, true, imageFile, "position:br, scalefactor:0.2 rel", conf)
+	return api.AddImageWatermarksFile(inFile, outFile, selectedPages, true, imageFile, description, conf)
+}
+
+func watermarkDescriptionFromPlacement(p signaturePlacement) string {
+	// Approximate A4 portrait in PDF points (works for current generated agreements).
+	// Use bottom-left anchor + offset so frontend drag coordinate can control placement.
+	const pageW = 595.0
+	const pageH = 842.0
+	xOffset := clampFloat(p.XRatio, 0.0, 1.0) * pageW
+	yOffset := (1.0 - clampFloat(p.YRatio, 0.0, 1.0)) * pageH
+	scale := clampFloat(p.Scale, 0.08, 0.5)
+	return fmt.Sprintf("position:bl, offset:%.2f %.2f, scalefactor:%.3f rel", xOffset, yOffset, scale)
 }
