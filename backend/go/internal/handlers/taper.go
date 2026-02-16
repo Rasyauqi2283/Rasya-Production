@@ -238,6 +238,7 @@ func TaperSign(w http.ResponseWriter, r *http.Request) {
 		r.FormValue("y_ratio"),
 		r.FormValue("scale_ratio"),
 	)
+	pageNum := parsePageNumber(r.FormValue("page"))
 
 	pdfBytes, _ := io.ReadAll(pdfFile)
 	sigBytes, _ := io.ReadAll(sigFile)
@@ -249,7 +250,7 @@ func TaperSign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	signedPDF, err := overlaySignatureOnPDF(pdfBytes, processedSig, placement)
+	signedPDF, err := overlaySignatureOnPDF(pdfBytes, processedSig, placement, pageNum)
 	if err != nil {
 		log.Printf("[taper] sign overlay error: %v", err)
 		w.Header().Set("Content-Type", "application/json")
@@ -300,6 +301,19 @@ func parseBool(v string) bool {
 	return v == "1" || v == "true" || v == "yes" || v == "y"
 }
 
+// parsePageNumber returns 1-based page for watermark; 0 means last page.
+func parsePageNumber(v string) int {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return 0
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil || n < 1 {
+		return 0
+	}
+	return n
+}
+
 func parseSignaturePlacement(xRaw, yRaw, sRaw string) signaturePlacement {
 	p := signaturePlacement{
 		XRatio: 0.72, // default near bottom-right
@@ -341,20 +355,16 @@ func processSignatureImage(data []byte) ([]byte, error) {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			c := color.RGBAModel.Convert(img.At(x, y)).(color.RGBA)
 			gray := (uint32(c.R) + uint32(c.G) + uint32(c.B)) / 3
-			// Remove paper background and force signature ink to black/white style.
+			// White paper: bright pixels = transparent. Black ink: dark pixels = black with full alpha.
 			if gray > threshold && c.R > 235 && c.G > 235 && c.B > 235 {
-				out.Set(x, y, color.RGBA{R: 0, G: 0, B: 0, A: 0})
+				out.Set(x, y, color.RGBA{R: 255, G: 255, B: 255, A: 0})
 				continue
 			}
-			inkStrength := uint8(255 - gray)
-			if inkStrength < 70 {
-				inkStrength = 70
+			ink := uint8(255 - gray)
+			if ink < 40 {
+				ink = 40
 			}
-			alpha := c.A
-			if inkStrength > alpha {
-				alpha = inkStrength
-			}
-			out.Set(x, y, color.RGBA{R: 0, G: 0, B: 0, A: alpha})
+			out.Set(x, y, color.RGBA{R: 0, G: 0, B: 0, A: ink})
 		}
 	}
 	var buf bytes.Buffer
@@ -375,8 +385,8 @@ func taperWorkDir() string {
 	return os.TempDir()
 }
 
-// overlaySignatureOnPDF uses pdfcpu to add signature image as watermark on last page.
-func overlaySignatureOnPDF(pdfBytes []byte, signaturePNG []byte, placement signaturePlacement) ([]byte, error) {
+// overlaySignatureOnPDF uses pdfcpu to add signature image as watermark. pageNum 0 = last page.
+func overlaySignatureOnPDF(pdfBytes []byte, signaturePNG []byte, placement signaturePlacement, pageNum int) ([]byte, error) {
 	dir := taperWorkDir()
 	ts := time.Now().UnixNano()
 	pdfPath := filepath.Join(dir, fmt.Sprintf("taper-in-%d.pdf", ts))
@@ -393,7 +403,7 @@ func overlaySignatureOnPDF(pdfBytes []byte, signaturePNG []byte, placement signa
 		return nil, fmt.Errorf("write sig temp: %w", err)
 	}
 
-	if err := addImageWatermarkLastPage(pdfPath, outPath, sigPath, placement); err != nil {
+	if err := addImageWatermarkPage(pdfPath, outPath, sigPath, placement, pageNum); err != nil {
 		return nil, fmt.Errorf("pdfcpu watermark: %w", err)
 	}
 	outBytes, err := os.ReadFile(outPath)
@@ -403,10 +413,16 @@ func overlaySignatureOnPDF(pdfBytes []byte, signaturePNG []byte, placement signa
 	return outBytes, nil
 }
 
-// addImageWatermarkLastPage adds image watermark to last page using pdfcpu (page "l" = last).
-func addImageWatermarkLastPage(inFile, outFile, imageFile string, placement signaturePlacement) error {
+// addImageWatermarkPage adds image watermark to one page. pageNum 0 = last page ("l").
+func addImageWatermarkPage(inFile, outFile, imageFile string, placement signaturePlacement, pageNum int) error {
 	desc := watermarkDescriptionFromPlacement(placement)
-	return addImageWatermarkPDFCPU(inFile, outFile, imageFile, []string{"l"}, desc)
+	var pages []string
+	if pageNum > 0 {
+		pages = []string{strconv.Itoa(pageNum)}
+	} else {
+		pages = []string{"l"}
+	}
+	return addImageWatermarkPDFCPU(inFile, outFile, imageFile, pages, desc)
 }
 
 func addImageWatermarkPDFCPU(inFile, outFile, imageFile string, selectedPages []string, description string) error {

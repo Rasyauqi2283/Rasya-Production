@@ -12,6 +12,7 @@ type Placement = {
   scale: number; // 0.08..0.5
 };
 
+// White paper + black ink: bright = transparent (shows white in preview box), dark = black.
 async function processSignaturePreview(file: File): Promise<string> {
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -38,9 +39,7 @@ async function processSignaturePreview(file: File): Promise<string> {
     const r = d[i];
     const g = d[i + 1];
     const b = d[i + 2];
-    const srcA = d[i + 3];
     const gray = Math.round((r + g + b) / 3);
-    // Remove bright paper background and force ink to black.
     if (gray > threshold && r > 235 && g > 235 && b > 235) {
       d[i] = 0;
       d[i + 1] = 0;
@@ -48,11 +47,11 @@ async function processSignaturePreview(file: File): Promise<string> {
       d[i + 3] = 0;
       continue;
     }
-    const inkStrength = Math.max(70, Math.min(255, (255 - gray) * 2));
+    const ink = Math.min(255, Math.max(40, 255 - gray));
     d[i] = 0;
     d[i + 1] = 0;
     d[i + 2] = 0;
-    d[i + 3] = Math.max(srcA, inkStrength);
+    d[i + 3] = ink;
   }
   ctx.putImageData(imageData, 0, 0);
   return canvas.toDataURL("image/png");
@@ -78,8 +77,13 @@ export default function TaperPage() {
   const [signLoading, setSignLoading] = useState(false);
   const [signedDone, setSignedDone] = useState(false);
   const [placement, setPlacement] = useState<Placement>({ x: 0.72, y: 0.82, scale: 0.2 });
+  const [signaturePage, setSignaturePage] = useState(1);
+  const [signatureSelected, setSignatureSelected] = useState(false);
   const [dragging, setDragging] = useState(false);
   const placementRef = useRef<HTMLDivElement | null>(null);
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const didDragRef = useRef(false);
+  const pointerDownOnSigRef = useRef(false);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,6 +179,7 @@ export default function TaperPage() {
       form.set("x_ratio", placement.x.toFixed(4));
       form.set("y_ratio", placement.y.toFixed(4));
       form.set("scale_ratio", placement.scale.toFixed(4));
+      form.set("page", String(signaturePage));
       const res = await fetch(`${API_URL}/api/taper/sign`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -242,19 +247,15 @@ export default function TaperPage() {
   const handleUnlockPosition = () => {
     setPositionLocked(false);
     setLockedAt(null);
+    setSignatureSelected(false);
+    // Keep showing original PDF; do not revoke basePdfUrl or change iframe to a revoked URL
   };
 
   const handleFinalDownload = async () => {
     await requestSignedPdf(false);
   };
 
-  const handleDragPointerDown = (e: React.PointerEvent<HTMLImageElement>) => {
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    setDragging(true);
-  };
-
   const updatePlacementFromPointer = (clientX: number, clientY: number) => {
-    if (!dragging) return;
     const box = placementRef.current;
     if (!box) return;
     const rect = box.getBoundingClientRect();
@@ -265,22 +266,37 @@ export default function TaperPage() {
     setPlacement((p) => ({ ...p, x: clampedX, y: clampedY }));
   };
 
-  const handleDragPointerMove = (e: React.PointerEvent<HTMLImageElement>) => {
-    updatePlacementFromPointer(e.clientX, e.clientY);
+  const handleSignaturePointerDown = (e: React.PointerEvent<HTMLImageElement>) => {
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+    didDragRef.current = false;
+    pointerDownOnSigRef.current = true;
   };
 
-  const handleStagePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    updatePlacementFromPointer(e.clientX, e.clientY);
+  const handleSignaturePointerMove = (e: React.PointerEvent<HTMLImageElement>) => {
+    if (!pointerDownOnSigRef.current || !signatureSelected) return;
+    const start = dragStartRef.current;
+    if (start && (Math.abs(e.clientX - start.x) > 5 || Math.abs(e.clientY - start.y) > 5)) {
+      didDragRef.current = true;
+      setDragging(true);
+      updatePlacementFromPointer(e.clientX, e.clientY);
+      dragStartRef.current = { x: e.clientX, y: e.clientY };
+    }
   };
 
-  const handleDragPointerUp = () => {
-    if (!dragging) return;
+  const handleSignaturePointerUp = () => {
+    if (!pointerDownOnSigRef.current) return;
+    pointerDownOnSigRef.current = false;
+    if (!didDragRef.current) {
+      setSignatureSelected((s) => !s);
+    }
     setDragging(false);
+    dragStartRef.current = null;
+    didDragRef.current = false;
   };
 
-  const handleStagePointerUp = () => {
-    if (!dragging) return;
-    setDragging(false);
+  const handleStagePointerDown = () => {
+    setSignatureSelected(false);
   };
 
   // Belum verifikasi OTP: tampilkan form OTP
@@ -398,9 +414,17 @@ export default function TaperPage() {
               />
               {signatureFile && <p className="mt-1 text-xs text-zinc-500">{signatureFile.name}</p>}
               <p className="mt-1 text-xs text-zinc-500">
-                Rekomendasi: foto tanda tangan di atas kertas putih; background putih akan dihilangkan dan tampil grayscale.
+                Rekomendasi: foto tanda tangan di atas kertas putih; background putih dihilangkan, tinta hitam di atas kertas HVS.
               </p>
             </div>
+            {signaturePreviewUrl && (
+              <div className="rounded-lg border border-rasya-border bg-rasya-dark/50 p-3">
+                <p className="text-xs font-medium text-zinc-300 mb-2">Preview tanda tangan (hitam di atas kertas putih)</p>
+                <div className="rounded bg-white p-3 flex items-center justify-center min-h-[80px]">
+                  <img src={signaturePreviewUrl} alt="Preview tanda tangan" className="max-h-20 object-contain" />
+                </div>
+              </div>
+            )}
 
             <button
               type="submit"
@@ -422,15 +446,25 @@ export default function TaperPage() {
               </p>
             ) : (
               <div className="space-y-3">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <label className="text-xs text-zinc-400">Tanda tangan di halaman ke</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={signaturePage}
+                    onChange={(e) => setSignaturePage(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    disabled={positionLocked}
+                    className="w-16 rounded border border-rasya-border bg-rasya-dark px-2 py-1 text-white text-sm"
+                  />
+                </div>
                 <div
                   ref={placementRef}
-                  onPointerMove={handleStagePointerMove}
-                  onPointerUp={handleStagePointerUp}
-                  onPointerCancel={handleStagePointerUp}
+                  onPointerDown={handleStagePointerDown}
                   className="relative min-h-[620px] rounded-lg border border-rasya-border bg-rasya-dark/60 overflow-hidden"
                 >
                   {basePdfUrl || previewPdfUrl ? (
                     <iframe
+                      key={positionLocked ? "locked" : "editing"}
                       src={positionLocked && previewPdfUrl ? previewPdfUrl : basePdfUrl}
                       title="Preview draft perjanjian bertanda tangan"
                       className="h-[620px] w-full rounded-lg"
@@ -443,12 +477,12 @@ export default function TaperPage() {
                   {signaturePreviewUrl && !positionLocked && (
                     <img
                       src={signaturePreviewUrl}
-                      alt="Tanda tangan (drag untuk atur posisi)"
-                      onPointerDown={handleDragPointerDown}
-                      onPointerMove={handleDragPointerMove}
-                      onPointerUp={handleDragPointerUp}
-                      onPointerCancel={handleDragPointerUp}
-                      className="absolute z-20 cursor-move select-none touch-none"
+                      alt="Tanda tangan (klik sekali untuk pilih, geser untuk pindah, klik lagi untuk lepas)"
+                      onPointerDown={handleSignaturePointerDown}
+                      onPointerMove={handleSignaturePointerMove}
+                      onPointerUp={handleSignaturePointerUp}
+                      onPointerCancel={handleSignaturePointerUp}
+                      className={`absolute z-20 select-none touch-none ${signatureSelected ? "cursor-grabbing ring-2 ring-rasya-accent ring-offset-2 ring-offset-rasya-dark" : "cursor-grab"}`}
                       style={{
                         left: `${placement.x * 100}%`,
                         top: `${placement.y * 100}%`,
@@ -460,6 +494,9 @@ export default function TaperPage() {
                     />
                   )}
                 </div>
+                <p className="text-xs text-zinc-500">
+                  {signatureSelected ? "Geser untuk pindah posisi, klik sekali lagi untuk lepas." : "Klik tanda tangan sekali untuk pilih, lalu geser. Klik lagi untuk lepas (seperti Canva)."}
+                </p>
                 <div>
                   <label className="block text-xs text-zinc-400 mb-1">Ukuran tanda tangan</label>
                   <input
