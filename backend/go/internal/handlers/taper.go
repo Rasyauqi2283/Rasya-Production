@@ -422,5 +422,6 @@ func watermarkDescriptionFromPlacement(p signaturePlacement) string {
 	xOffset := clampFloat(p.XRatio, 0.0, 1.0) * pageW
 	yOffset := (1.0 - clampFloat(p.YRatio, 0.0, 1.0)) * pageH
 	scale := clampFloat(p.Scale, 0.08, 0.5)
-	return fmt.Sprintf("position:bl, offset:%.2f %.2f, scalefactor:%.3f rel", xOffset, yOffset, scale)
+	// Force rotation 0 so signature is not auto-diagonal by pdfcpu defaults.
+	return fmt.Sprintf("position:bl, offset:%.2f %.2f, scalefactor:%.3f rel, rotation:0", xOffset, yOffset, scale)
 }

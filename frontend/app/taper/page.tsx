@@ -68,9 +68,12 @@ export default function TaperPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [signatureFile, setSignatureFile] = useState<File | null>(null);
   const [signaturePreviewUrl, setSignaturePreviewUrl] = useState("");
+  const [basePdfUrl, setBasePdfUrl] = useState("");
   const [previewPdfUrl, setPreviewPdfUrl] = useState("");
   const [previewReady, setPreviewReady] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [positionLocked, setPositionLocked] = useState(false);
+  const [lockedAt, setLockedAt] = useState<string | null>(null);
   const [signError, setSignError] = useState("");
   const [signLoading, setSignLoading] = useState(false);
   const [signedDone, setSignedDone] = useState(false);
@@ -113,11 +116,14 @@ export default function TaperPage() {
   useEffect(() => {
     return () => {
       if (previewPdfUrl) URL.revokeObjectURL(previewPdfUrl);
+      if (basePdfUrl) URL.revokeObjectURL(basePdfUrl);
     };
-  }, [previewPdfUrl]);
+  }, [previewPdfUrl, basePdfUrl]);
 
   useEffect(() => {
     setPreviewReady(false);
+    setPositionLocked(false);
+    setLockedAt(null);
     setSignError("");
     if (!signatureFile) {
       setSignaturePreviewUrl("");
@@ -141,9 +147,15 @@ export default function TaperPage() {
 
   useEffect(() => {
     setPreviewReady(false);
+    setPositionLocked(false);
+    setLockedAt(null);
     setPreviewPdfUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return "";
+    });
+    setBasePdfUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return pdfFile ? URL.createObjectURL(pdfFile) : "";
     });
   }, [pdfFile]);
 
@@ -209,7 +221,27 @@ export default function TaperPage() {
 
   const handleSavePreview = async (e: React.FormEvent) => {
     e.preventDefault();
-    await requestSignedPdf(true);
+    setPositionLocked(false);
+    setLockedAt(null);
+  };
+
+  const handleLockPosition = async () => {
+    const ok = await requestSignedPdf(true);
+    if (ok) {
+      setPositionLocked(true);
+      setLockedAt(
+        new Date().toLocaleString("id-ID", {
+          timeZone: "Asia/Jakarta",
+          dateStyle: "medium",
+          timeStyle: "medium",
+        })
+      );
+    }
+  };
+
+  const handleUnlockPosition = () => {
+    setPositionLocked(false);
+    setLockedAt(null);
   };
 
   const handleFinalDownload = async () => {
@@ -241,16 +273,14 @@ export default function TaperPage() {
     updatePlacementFromPointer(e.clientX, e.clientY);
   };
 
-  const handleDragPointerUp = async () => {
+  const handleDragPointerUp = () => {
     if (!dragging) return;
     setDragging(false);
-    if (previewReady) await requestSignedPdf(true);
   };
 
-  const handleStagePointerUp = async () => {
+  const handleStagePointerUp = () => {
     if (!dragging) return;
     setDragging(false);
-    if (previewReady) await requestSignedPdf(true);
   };
 
   // Belum verifikasi OTP: tampilkan form OTP
@@ -374,21 +404,21 @@ export default function TaperPage() {
 
             <button
               type="submit"
-              disabled={previewLoading || !pdfFile || !signatureFile}
+              disabled={!pdfFile || !signatureFile}
               className="w-full rounded-lg bg-rasya-accent px-4 py-3 font-medium text-rasya-dark hover:bg-rasya-accent/90 disabled:opacity-50"
             >
-              {previewLoading ? "Menyimpan..." : "Simpan"}
+              Simpan
             </button>
             <p className="text-xs text-zinc-500">
-              Tombol simpan akan membuat draft preview PDF dengan tanda tangan hitam-putih.
+              Setelah simpan, atur posisi tanda tangan langsung di area preview PDF.
             </p>
           </div>
 
           <div className="space-y-4 rounded-xl border border-rasya-border bg-rasya-surface p-4">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-300">2) Atur posisi & preview draft</h2>
-            {!previewReady ? (
+            {!pdfFile || !signatureFile ? (
               <p className="text-sm text-zinc-500">
-                Setelah dua file diunggah, klik <span className="text-zinc-300">Simpan</span> untuk memunculkan draft preview.
+                Upload dua file terlebih dahulu, lalu klik <span className="text-zinc-300">Simpan</span> untuk mulai atur posisi.
               </p>
             ) : (
               <div className="space-y-3">
@@ -399,14 +429,18 @@ export default function TaperPage() {
                   onPointerCancel={handleStagePointerUp}
                   className="relative min-h-[620px] rounded-lg border border-rasya-border bg-rasya-dark/60 overflow-hidden"
                 >
-                  {previewPdfUrl ? (
-                    <iframe src={previewPdfUrl} title="Preview draft perjanjian bertanda tangan" className="h-[620px] w-full rounded-lg" />
+                  {basePdfUrl || previewPdfUrl ? (
+                    <iframe
+                      src={positionLocked && previewPdfUrl ? previewPdfUrl : basePdfUrl}
+                      title="Preview draft perjanjian bertanda tangan"
+                      className="h-[620px] w-full rounded-lg"
+                    />
                   ) : (
                     <div className="flex h-[620px] items-center justify-center text-sm text-zinc-500">
                       Preview belum tersedia.
                     </div>
                   )}
-                  {signaturePreviewUrl && (
+                  {signaturePreviewUrl && !positionLocked && (
                     <img
                       src={signaturePreviewUrl}
                       alt="Tanda tangan (drag untuk atur posisi)"
@@ -435,17 +469,38 @@ export default function TaperPage() {
                     step={0.01}
                     value={placement.scale}
                     onChange={(e) => setPlacement((p) => ({ ...p, scale: Number(e.target.value) }))}
+                    disabled={positionLocked}
                     className="w-full"
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => requestSignedPdf(true)}
-                  disabled={previewLoading}
-                  className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-sm font-medium text-zinc-200 hover:border-rasya-accent disabled:opacity-50"
-                >
-                  {previewLoading ? "Memperbarui preview..." : "Perbarui preview"}
-                </button>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={handleLockPosition}
+                    disabled={previewLoading || positionLocked}
+                    className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-sm font-medium text-zinc-200 hover:border-rasya-accent disabled:opacity-50"
+                  >
+                    {previewLoading ? "Mengunci..." : "Lock position"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleUnlockPosition}
+                    disabled={!positionLocked}
+                    className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-sm font-medium text-zinc-200 hover:border-rasya-accent disabled:opacity-50"
+                  >
+                    Ubah posisi lagi
+                  </button>
+                </div>
+                <p className="text-xs text-zinc-500">
+                  {positionLocked
+                    ? "Posisi terkunci. Sekarang Anda bisa unduh & berikan."
+                    : "Geser tanda tangan sampai pas, lalu klik Lock position."}
+                </p>
+                {positionLocked && lockedAt && (
+                  <div className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
+                    Posisi terkunci pada {lockedAt} (WIB)
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -455,7 +510,7 @@ export default function TaperPage() {
             <button
               type="button"
               onClick={handleFinalDownload}
-              disabled={signLoading || !previewReady || !pdfFile || !signatureFile}
+              disabled={signLoading || !positionLocked || !previewReady || !pdfFile || !signatureFile}
               className="w-full rounded-lg bg-rasya-accent px-4 py-3 font-medium text-rasya-dark hover:bg-rasya-accent/90 disabled:opacity-50"
             >
               {signLoading ? "Memproses unduhan..." : "Unduh & berikan"}

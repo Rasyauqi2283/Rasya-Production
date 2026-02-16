@@ -39,6 +39,26 @@ function formatPriceIdr(num: number): string {
   if (num >= 1000) return (num / 1000).toFixed(0) + " ribu";
   return String(num);
 }
+
+function formatDateWIB(input: string): string {
+  if (!input) return "-";
+  // Legacy format from backend: "YYYY-MM-DD HH:mm:ss" (assume UTC).
+  const normalized = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(input)
+    ? input.replace(" ", "T") + "Z"
+    : input;
+  const d = new Date(normalized);
+  if (Number.isNaN(d.getTime())) return input;
+  return d.toLocaleString("id-ID", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+}
 type Service = {
   id: string;
   title: string;
@@ -1728,7 +1748,7 @@ function AdminAgreement({ apiUrl, adminKey }: { apiUrl: string; adminKey: string
           <div className="rounded-lg border border-rasya-border bg-rasya-dark/50 p-4 mb-4">
             <p className="text-sm text-zinc-300 mb-1">
               <span className="text-rasya-accent font-mono text-lg">{generatedOTP}</span>
-              {generatedExpiry && <span className="text-zinc-500 ml-2">(berlaku sampai {new Date(generatedExpiry).toLocaleString("id-ID")})</span>}
+              {generatedExpiry && <span className="text-zinc-500 ml-2">(berlaku sampai {formatDateWIB(generatedExpiry)} WIB)</span>}
             </p>
             <p className="text-sm text-zinc-400 break-all mt-2">
               Link untuk client: <a href={taperBaseUrl ? taperBaseUrl + "/taper" : "#"} target="_blank" rel="noopener noreferrer" className="text-rasya-accent underline">{taperBaseUrl || "..."}/taper</a>
@@ -1765,7 +1785,7 @@ function AdminAgreement({ apiUrl, adminKey }: { apiUrl: string; adminKey: string
                   {agreementGeneratedDocs.map((d) => (
                     <li key={d.id} className="flex items-center gap-2 rounded-lg border border-rasya-border bg-rasya-dark/30 px-3 py-2 text-sm">
                       <span className="text-rasya-accent font-mono truncate flex-1">{d.filename}</span>
-                      <span className="text-zinc-500 shrink-0">{new Date(d.created_at).toLocaleString("id-ID")}</span>
+                      <span className="text-zinc-500 shrink-0">{formatDateWIB(d.created_at)} WIB</span>
                     </li>
                   ))}
                 </ul>
@@ -1783,7 +1803,7 @@ function AdminAgreement({ apiUrl, adminKey }: { apiUrl: string; adminKey: string
               <li key={d.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-rasya-border bg-rasya-dark/30 px-3 py-2 text-sm">
                 <span className="font-mono text-rasya-accent">{d.id}</span>
                 <span className="text-zinc-300">{d.filename}</span>
-                <span className="text-zinc-500">{d.created_at}</span>
+                <span className="text-zinc-500">{formatDateWIB(d.created_at)} WIB</span>
                 {d.download_url && (
                   <a href={d.download_url} target="_blank" rel="noopener noreferrer" className="text-rasya-accent underline ml-auto">Unduh</a>
                 )}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // TaperAdminGenerateOTPRequest is the body for POST /api/admin/taper/otp.
@@ -107,7 +108,8 @@ func TaperAdminListSigned(w http.ResponseWriter, r *http.Request) {
 			OTPCode:   d.OTPCode,
 			Label:     d.Label,
 			Filename:  d.Filename,
-			CreatedAt: d.CreatedAt.Format("2006-01-02 15:04:05"),
+			// Send ISO with timezone so frontend can format consistently (eg. WIB).
+			CreatedAt: d.CreatedAt.UTC().Format(time.RFC3339),
 		}
 		if baseURL != "" && d.StoredPath != "" {
 			doc.DownloadURL = strings.TrimSuffix(baseURL, "/") + "/uploads/" + d.StoredPath
