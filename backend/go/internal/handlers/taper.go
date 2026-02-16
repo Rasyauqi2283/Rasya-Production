@@ -341,11 +341,20 @@ func processSignatureImage(data []byte) ([]byte, error) {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			c := color.RGBAModel.Convert(img.At(x, y)).(color.RGBA)
 			gray := (uint32(c.R) + uint32(c.G) + uint32(c.B)) / 3
-			alpha := c.A
+			// Remove paper background and force signature ink to black/white style.
 			if gray > threshold && c.R > 235 && c.G > 235 && c.B > 235 {
-				alpha = 0
+				out.Set(x, y, color.RGBA{R: 0, G: 0, B: 0, A: 0})
+				continue
 			}
-			out.Set(x, y, color.RGBA{R: uint8(gray), G: uint8(gray), B: uint8(gray), A: alpha})
+			inkStrength := uint8(255 - gray)
+			if inkStrength < 70 {
+				inkStrength = 70
+			}
+			alpha := c.A
+			if inkStrength > alpha {
+				alpha = inkStrength
+			}
+			out.Set(x, y, color.RGBA{R: 0, G: 0, B: 0, A: alpha})
 		}
 	}
 	var buf bytes.Buffer
