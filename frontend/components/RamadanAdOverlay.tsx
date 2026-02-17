@@ -63,7 +63,7 @@ export default function RamadanAdOverlay() {
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         aria-hidden="true"
       />
-      <div className="relative z-10 flex w-full max-w-md flex-col">
+      <div className="relative z-10 w-full max-w-md">
         <button
           type="button"
           onClick={() => setVisible(false)}
@@ -75,8 +75,9 @@ export default function RamadanAdOverlay() {
           </svg>
         </button>
 
+        {/* Satu viewport tetap; tiap slide dapat lebar penuh viewport */}
         <div
-          className="overflow-hidden rounded-2xl border-2 border-amber-400/60 shadow-2xl shadow-amber-900/20 select-none cursor-grab active:cursor-grabbing"
+          className="w-full overflow-hidden rounded-2xl border-2 border-amber-400/60 shadow-2xl shadow-amber-900/20 select-none cursor-grab active:cursor-grabbing"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -86,29 +87,29 @@ export default function RamadanAdOverlay() {
           onMouseLeave={handleMouseUp}
         >
           <div
-            className="flex transition-transform duration-300 ease-out"
+            className="flex w-full transition-transform duration-300 ease-out"
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
           >
-            {/* Slide 1: Ramadan */}
-            <div className="min-w-full shrink-0 bg-gradient-to-b from-emerald-950/95 to-slate-900/95 p-8">
+            {/* Slide 1: Ramadan — satu layer space penuh */}
+            <div className="w-full min-w-full shrink-0 overflow-hidden bg-gradient-to-b from-emerald-950/95 to-slate-900/95 px-6 py-8 sm:px-8">
               <div className="text-center">
                 <span className="text-5xl" aria-hidden>
                   🌙
                 </span>
-                <h2 className="mt-4 font-display text-2xl font-bold text-amber-200 sm:text-3xl">
+                <h2 className="mt-4 font-display text-xl font-bold text-amber-200 break-words sm:text-2xl">
                   Selamat Menunaikan Ibadah Puasa
                 </h2>
-                <p className="mt-2 text-emerald-200/90">
+                <p className="mt-2 text-sm text-emerald-200/90 sm:text-base">
                   Marhaban ya Ramadan · Ramadan Kareem
                 </p>
-                <p className="mt-4 text-sm text-zinc-400">
+                <p className="mt-4 text-xs text-zinc-400 break-words sm:text-sm">
                   Geser ke kanan untuk iklan lainnya · Menutup otomatis dalam 5 detik
                 </p>
               </div>
             </div>
 
-            {/* Slide 2: Iklan disini */}
-            <div className="min-w-full shrink-0 bg-gradient-to-b from-slate-800/95 to-slate-900/95 p-8">
+            {/* Slide 2: Iklan disini — satu layer space penuh */}
+            <div className="w-full min-w-full shrink-0 overflow-hidden bg-gradient-to-b from-slate-800/95 to-slate-900/95 px-6 py-8 sm:px-8">
               <div className="flex min-h-[200px] flex-col items-center justify-center text-center">
                 <p className="text-xl font-semibold text-zinc-300">Iklan disini</p>
                 <p className="mt-2 text-sm text-zinc-500">Geser ke kiri untuk kembali</p>

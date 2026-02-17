@@ -22,12 +22,6 @@ const CATEGORY_LABEL_KEYS: Record<(typeof CATEGORY_IDS)[number], string> = {
 
 const ANALITIK_DATA: Record<(typeof CATEGORY_IDS)[number], AnalitikItem[]> = {
   web_digital: [
-    { name: "Go (Golang)", rating: 4, desc: { id: "Bahasa pemrograman backend, API, dan layanan performa tinggi.", en: "Backend language for APIs and high-performance services." }, skillsRates: { id: "Go 4/5, VS Code, PostgreSQL, Docker.", en: "Go 4/5, VS Code, PostgreSQL, Docker." } },
-    { name: "Next.js", rating: 4, desc: { id: "Framework React dengan SSR, routing, dan optimasi production.", en: "React framework with SSR, routing, and production optimizations." }, skillsRates: { id: "Next.js 4/5, React, VS Code, Vercel.", en: "Next.js 4/5, React, VS Code, Vercel." } },
-    { name: "React", rating: 4, desc: { id: "Library JavaScript untuk UI interaktif berbasis komponen.", en: "JavaScript library for interactive, component-based UIs." }, skillsRates: { id: "React 4/5, TypeScript, VS Code, npm.", en: "React 4/5, TypeScript, VS Code, npm." } },
-    { name: "TypeScript", rating: 4, desc: { id: "JavaScript dengan tipe statis. Memudahkan maintain dan mengurangi error.", en: "JavaScript with static types. Improves maintainability." }, skillsRates: { id: "TypeScript 4/5, VS Code.", en: "TypeScript 4/5, VS Code." } },
-    { name: "PostgreSQL", rating: 4, desc: { id: "Basis data relasional open-source.", en: "Open-source relational database." }, skillsRates: { id: "PostgreSQL 4/5, SQL.", en: "PostgreSQL 4/5, SQL." } },
-    { name: "Node.js", rating: 3, desc: { id: "Runtime JavaScript di sisi server.", en: "JavaScript runtime on the server." }, skillsRates: { id: "Node.js 3/5, npm, VS Code.", en: "Node.js 3/5, npm, VS Code." } },
     { name: "WordPress", desc: { id: "Situs berbasis WordPress.", en: "WordPress-based sites." }, skillsRates: { id: "PHP, tema/plugin, Local by Flywheel.", en: "PHP, themes/plugins, Local." } },
     { name: "Frontend Developer", desc: { id: "Tampilan dan interaksi di browser. Markup, styling, responsif.", en: "Browser UI and interaction. Markup, styling, responsive." }, skillsRates: { id: "React 4/5, VS Code, Next.js 4/5, Tailwind CSS, Git.", en: "React 4/5, VS Code, Next.js 4/5, Tailwind CSS, Git." } },
     { name: "Backend Developer", desc: { id: "Server, API, dan logika aplikasi. REST API, database, auth.", en: "Server, API, and app logic. REST API, database, auth." }, skillsRates: { id: "Go 4/5, Node.js 3/5, PostgreSQL, Postman, Docker.", en: "Go 4/5, Node.js 3/5, PostgreSQL, Postman, Docker." } },
