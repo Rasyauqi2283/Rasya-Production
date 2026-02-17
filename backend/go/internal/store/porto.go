@@ -141,7 +141,7 @@ func (p *PortoStore) SeedIfEmpty() {
 		{
 			"Website Company Profile — F&B",
 			"Web & Digital",
-			"Website one-page company profile untuk brand F&B: hero, tentang, menu unggulan, galeri, dan kontak. Desain bersih, responsif, dan siap dipakai di desktop dan mobile.",
+			"Website one-page company profile untuk brand F&B: hero, tentang, menu unggulan, galeri, dan kontak. Desain bersih dan responsif. Stack: Frontend React/Next.js; backend opsional (API form kontak); database PostgreSQL/Supabase bila ada form; launch Vercel atau Netlify.",
 			"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=450&fit=crop",
 			"",
 			[]string{"Web & Digital", "UI Designer"},
@@ -157,7 +157,7 @@ func (p *PortoStore) SeedIfEmpty() {
 		{
 			"Landing Page Kampanye Produk",
 			"Web & Digital",
-			"Landing page untuk kampanye produk terbaru: headline, benefit, CTA, dan form lead. Fokus konversi dan integrasi dengan CRM.",
+			"Landing page kampanye: headline, benefit, CTA, form lead. Fokus konversi. Stack: Frontend React/Next.js; backend API form + integrasi CRM; database PostgreSQL/Supabase untuk simpan lead; launch Vercel/Netlify, siap integrasi CRM.",
 			"https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=450&fit=crop",
 			"",
 			[]string{"Web & Digital", "Landing Page Designer"},
@@ -199,7 +199,7 @@ func (p *PortoStore) seedIfEmptyDB() {
 		{
 			"Website Company Profile — F&B",
 			"Web & Digital",
-			"Website one-page company profile untuk brand F&B: hero, tentang, menu unggulan, galeri, dan kontak. Desain bersih, responsif, dan siap dipakai di desktop dan mobile.",
+			"Website one-page company profile untuk brand F&B: hero, tentang, menu unggulan, galeri, dan kontak. Desain bersih dan responsif. Stack: Frontend React/Next.js; backend opsional (API form kontak); database PostgreSQL/Supabase bila ada form; launch Vercel atau Netlify.",
 			"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=450&fit=crop",
 			"",
 			[]string{"Web & Digital", "UI Designer"},
@@ -215,7 +215,7 @@ func (p *PortoStore) seedIfEmptyDB() {
 		{
 			"Landing Page Kampanye Produk",
 			"Web & Digital",
-			"Landing page untuk kampanye produk terbaru: headline, benefit, CTA, dan form lead. Fokus konversi dan integrasi dengan CRM.",
+			"Landing page kampanye: headline, benefit, CTA, form lead. Fokus konversi. Stack: Frontend React/Next.js; backend API form + integrasi CRM; database PostgreSQL/Supabase untuk simpan lead; launch Vercel/Netlify, siap integrasi CRM.",
 			"https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=450&fit=crop",
 			"",
 			[]string{"Web & Digital", "Landing Page Designer"},
