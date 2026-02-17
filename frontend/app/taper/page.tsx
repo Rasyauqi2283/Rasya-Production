@@ -267,6 +267,7 @@ export default function TaperPage() {
   };
 
   const handleSignaturePointerDown = (e: React.PointerEvent<HTMLImageElement>) => {
+    e.stopPropagation(); // agar stage tidak menerima pointer down dan memanggil setSignatureSelected(false)
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     dragStartRef.current = { x: e.clientX, y: e.clientY };
     didDragRef.current = false;
@@ -495,7 +496,7 @@ export default function TaperPage() {
                   )}
                 </div>
                 <p className="text-xs text-zinc-500">
-                  {signatureSelected ? "Geser untuk pindah posisi, klik sekali lagi untuk lepas." : "Klik tanda tangan sekali untuk pilih, lalu geser. Klik lagi untuk lepas (seperti Canva)."}
+                  {signatureSelected ? "Geser untuk pindah posisi, klik sekali lagi untuk lepas." : "Klik tanda tangan sekali untuk pilih, lalu geser. Klik lagi untuk lepas."}
                 </p>
                 <div>
                   <label className="block text-xs text-zinc-400 mb-1">Ukuran tanda tangan</label>

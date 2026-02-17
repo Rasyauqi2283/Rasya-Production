@@ -4,6 +4,7 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import RamadanAdOverlay from "@/components/RamadanAdOverlay";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -96,6 +97,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen font-display">
         <LanguageProvider>
+          <RamadanAdOverlay />
           <Header />
           <main>{children}</main>
           <Footer />
