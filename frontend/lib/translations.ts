@@ -178,12 +178,13 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Analitik overlay (penasaran apa yang saya bisa)
     analitik_btn: "Penasaran apa yang saya bisa?",
     analitik_layer1_title: "Dashboard Analitik",
-    analitik_layer1_desc: "Kemampuan yang bisa dikerjakan — rating skala 5.",
+    analitik_layer1_desc: "Ini merupakan hal yang bisa saya kerjakan.",
     analitik_layer2_title: "Soft skill",
     analitik_layer2_text: "Saya suka dan mau belajar hal baru, untuk menambah softskill.",
     analitik_next: "Lanjut",
     analitik_back: "Kembali",
     analitik_close: "Tutup",
+    analitik_close_desc: "Tutup penjelasan",
   },
   en: {
     nav_about: "About",
@@ -352,12 +353,13 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Analitik overlay
     analitik_btn: "Curious what I can do?",
     analitik_layer1_title: "Analytics Dashboard",
-    analitik_layer1_desc: "Skills I can deliver — rating on a scale of 5.",
+    analitik_layer1_desc: "This is what I can deliver.",
     analitik_layer2_title: "Soft skill",
     analitik_layer2_text: "I like learning new things to grow my soft skills.",
     analitik_next: "Next",
     analitik_back: "Back",
     analitik_close: "Close",
+    analitik_close_desc: "Close description",
   },
 };
 

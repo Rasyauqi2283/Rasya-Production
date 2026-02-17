@@ -77,10 +77,6 @@ export default function CaraKerjaOverlay({ open, onClose }: Props) {
           ))}
         </ol>
 
-        <p className="rounded-lg border border-rasya-accent/30 bg-rasya-accent/10 px-4 py-3 text-sm italic text-rasya-accent">
-          👉 {t("cara_kerja_quote")}
-        </p>
-
         <button
           type="button"
           onClick={onClose}
