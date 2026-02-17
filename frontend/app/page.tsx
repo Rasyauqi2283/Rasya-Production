@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import AntrianLayanan from "@/components/AntrianLayanan";
+import AnalitikOverlay from "@/components/AnalitikOverlay";
+import CaraKerjaOverlay from "@/components/CaraKerjaOverlay";
 import DonateForm from "@/components/DonateForm";
 import JasaLanes from "@/components/JasaLanes";
 import LayananPreviewCard from "@/components/LayananPreviewCard";
@@ -16,6 +19,8 @@ const WHATSAPP_PREFILL_EN = "Hi, I'm from the Rasya Production website. I'd like
 
 export default function Home() {
   const { lang, t } = useLanguage();
+  const [caraKerjaOpen, setCaraKerjaOpen] = useState(false);
+  const [analitikOpen, setAnalitikOpen] = useState(false);
   const whatsappPrefill = lang === "en" ? WHATSAPP_PREFILL_EN : WHATSAPP_PREFILL_ID;
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappPrefill)}`;
 
@@ -83,6 +88,33 @@ export default function Home() {
         </div>
       </section>
 
+      <section
+        id="commitment"
+        className="border-t border-rasya-border bg-rasya-dark py-24 px-6"
+        aria-labelledby="commitment-heading"
+      >
+        <div className="mx-auto max-w-3xl">
+          <h2
+            id="commitment-heading"
+            className="mb-6 font-mono text-sm uppercase tracking-widest text-rasya-accent"
+          >
+            {t("commitment_heading")}
+          </h2>
+          <p className="mb-4 text-lg text-zinc-300 leading-relaxed">
+            {t("commitment_1")}
+          </p>
+          <p className="mb-10 text-lg text-zinc-300 leading-relaxed">
+            {t("commitment_2")}
+          </p>
+          <h3 className="mb-3 text-base font-semibold text-white">
+            {t("personal_proof_heading")}
+          </h3>
+          <p className="text-zinc-400 leading-relaxed">
+            {t("personal_proof_text")}
+          </p>
+        </div>
+      </section>
+
       <LayananSection />
 
       <AntrianLayanan apiUrl={API_URL} />
@@ -108,8 +140,28 @@ export default function Home() {
               : "Halaman demo untuk template layanan. Pilih salah satu tema untuk melihat desain preview yang lebih serius."}
           </p>
           <LayananPreviewCard />
+
+          <div className="mt-8 flex flex-wrap gap-4">
+            <button
+              type="button"
+              onClick={() => setAnalitikOpen(true)}
+              className="rounded-xl border-2 border-rasya-primary/60 bg-rasya-primary/10 px-6 py-4 font-semibold text-rasya-primary transition hover:border-rasya-primary hover:bg-rasya-primary/20"
+            >
+              {t("analitik_btn")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setCaraKerjaOpen(true)}
+              className="rounded-xl border-2 border-dashed border-rasya-accent/60 bg-rasya-accent/10 px-6 py-4 text-left font-semibold text-rasya-accent transition hover:border-rasya-accent hover:bg-rasya-accent/20"
+            >
+              👉 {t("cara_kerja_btn")}
+            </button>
+          </div>
         </div>
       </section>
+
+      <CaraKerjaOverlay open={caraKerjaOpen} onClose={() => setCaraKerjaOpen(false)} />
+      <AnalitikOverlay open={analitikOpen} onClose={() => setAnalitikOpen(false)} />
 
       <section
         id="porto"

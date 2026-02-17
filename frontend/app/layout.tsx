@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Outfit, JetBrains_Mono } from "next/font/google";
 import { LanguageProvider } from "@/context/LanguageContext";
+import CookieConsentBanner from "@/components/CookieConsentBanner";
+import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import "./globals.css";
 
@@ -96,11 +98,8 @@ export default function RootLayout({
         <LanguageProvider>
           <Header />
           <main>{children}</main>
-          <footer className="border-t border-rasya-border bg-rasya-surface py-8">
-            <div className="mx-auto max-w-6xl px-6 text-center text-sm text-zinc-500">
-              © 2026 Rasya Production V 1.0. All rights reserved.
-            </div>
-          </footer>
+          <Footer />
+          <CookieConsentBanner />
         </LanguageProvider>
       </body>
     </html>

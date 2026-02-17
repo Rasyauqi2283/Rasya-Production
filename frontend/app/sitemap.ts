@@ -11,5 +11,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 1,
     },
+    {
+      url: `${siteUrl}/cookies`,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    },
   ];
 }

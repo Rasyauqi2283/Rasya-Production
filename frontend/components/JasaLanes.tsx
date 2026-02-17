@@ -150,12 +150,15 @@ export default function JasaLanes() {
       aria-labelledby="jasa-lanes-heading"
     >
       <div className="mx-auto max-w-6xl">
-        <h2
+        <p
           id="jasa-lanes-heading"
-          className="mb-10 text-center text-2xl font-bold text-white sm:text-3xl"
+          className="mb-2 text-center text-xl font-semibold text-rasya-accent sm:text-2xl"
         >
+          {t("jasa_fresh_launch")}
+        </p>
+        <p className="mb-10 text-center text-base text-zinc-400 sm:text-lg">
           {t("jasa_heading")}
-        </h2>
+        </p>
         <p className="mb-8 text-center text-sm text-zinc-500">
           <span className="inline-flex items-center gap-2">
             <span className="h-4 w-4 rounded border border-rasya-border bg-rasya-card" />
