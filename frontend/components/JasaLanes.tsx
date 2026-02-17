@@ -156,8 +156,11 @@ export default function JasaLanes() {
         >
           {t("jasa_fresh_launch")}
         </p>
-        <p className="mb-10 text-center text-base text-zinc-400 sm:text-lg">
+        <p className="mb-2 text-center text-base text-zinc-400 sm:text-lg">
           {t("jasa_heading")}
+        </p>
+        <p className="mb-10 text-center text-sm text-zinc-500">
+          {t("jasa_subheading")}
         </p>
         <p className="mb-8 text-center text-sm text-zinc-500">
           <span className="inline-flex items-center gap-2">
