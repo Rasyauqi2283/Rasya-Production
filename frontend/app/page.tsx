@@ -79,39 +79,15 @@ export default function Home() {
             <p className="text-zinc-400 leading-relaxed">{t("about_p1")}</p>
             <p className="text-zinc-400 leading-relaxed">{t("about_p2")}</p>
           </div>
+          <p className="mt-6 text-zinc-400 leading-relaxed md:col-span-2">
+            {t("about_p3")}
+          </p>
           <div className="mt-10 rounded-xl border border-rasya-accent/30 bg-rasya-accent/5 px-6 py-5">
             <p className="text-zinc-300 leading-relaxed">
               <span className="font-medium text-white">{t("about_vendor")}</span>{" "}
               {t("about_vendor_desc")}
             </p>
           </div>
-        </div>
-      </section>
-
-      <section
-        id="commitment"
-        className="border-t border-rasya-border bg-rasya-dark py-24 px-6"
-        aria-labelledby="commitment-heading"
-      >
-        <div className="mx-auto max-w-3xl">
-          <h2
-            id="commitment-heading"
-            className="mb-6 font-mono text-sm uppercase tracking-widest text-rasya-accent"
-          >
-            {t("commitment_heading")}
-          </h2>
-          <p className="mb-4 text-lg text-zinc-300 leading-relaxed">
-            {t("commitment_1")}
-          </p>
-          <p className="mb-10 text-lg text-zinc-300 leading-relaxed">
-            {t("commitment_2")}
-          </p>
-          <h3 className="mb-3 text-base font-semibold text-white">
-            {t("personal_proof_heading")}
-          </h3>
-          <p className="text-zinc-400 leading-relaxed">
-            {t("personal_proof_text")}
-          </p>
         </div>
       </section>
 

@@ -123,6 +123,8 @@ export default function LayananSection() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {(category?.services ?? []).map((item) => {
               const { title: displayTitle, desc: displayDesc } = getServiceDisplay(t, item.title, item.desc || "");
+              const priceLabel = (item.price_awal || "").replace(/\s*\(harga awal\)\s*/gi, "").trim();
+              const priceDisplay = priceLabel ? `${t("services_price_from")} ${priceLabel}` : t("services_brief");
               return (
               <div
                 key={item.id}
@@ -140,7 +142,7 @@ export default function LayananSection() {
                   ) : item.discount_percent && item.discount_percent > 0 ? (
                     <>
                       <p className="text-zinc-500 line-through">
-                        {item.price_awal || t("services_brief")}
+                        {priceDisplay}
                       </p>
                       <p className="font-medium text-rasya-accent mt-0.5">
                         {t("services_discount")} {item.discount_percent}%: {item.price_after_discount || "—"}
@@ -148,7 +150,7 @@ export default function LayananSection() {
                     </>
                   ) : (
                     <p className="font-medium text-rasya-accent">
-                      {item.price_awal || t("services_brief")}
+                      {priceDisplay}
                     </p>
                   )}
                 </div>

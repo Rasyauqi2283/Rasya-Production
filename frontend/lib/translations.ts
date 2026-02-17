@@ -17,6 +17,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     about_title: "Solusi kreatif & digital perorangan",
     about_p1: "Rasya Production adalah brand pribadi saya: konten, desain, dan teknologi. Setiap proyek saya kerjakan dengan pendekatan rapi dan berorientasi hasil—tanpa mengorbankan kreativitas.",
     about_p2: "Saya fokus pada kualitas output: dari konten dan desain hingga pengalaman digital. Situs ini—rasyaproduction.up.railway.app atau raspro.co.id—adalah wajah profesional dari layanan yang saya tawarkan.",
+    about_p3: "Setiap project saya kerjakan langsung—tanpa dilempar ke pihak ketiga. Saya fokus pada desain yang fungsional dan memakai tools seperti Figma serta VS Code agar hasil rapi dan siap di-handover.",
     about_vendor: "Vendor atau agency yang butuh tenaga eksternal?",
     about_vendor_desc: "Saya bisa menjadi third party Anda dalam pengerjaan—dengan kontrak yang jelas: scope, deadline, dan kompensasi terdefinisi. Kerja sama profesional, bukan kerja borongan tanpa batas.",
     // JasaLanes
@@ -34,6 +35,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     services_empty: "Belum ada layanan. Tambah layanan di halaman admin (Kelola Layanan).",
     services_closed: "closed can't order",
     services_brief: "Sesuai brief",
+    services_price_from: "Mulai dari",
     services_discount: "Diskon",
     // Antrian
     antrian_heading: "Antrian",
@@ -200,6 +202,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     about_title: "Creative & digital solutions for individuals",
     about_p1: "Rasya Production is my personal brand: content, design, and technology. Every project is done with a clean, result-oriented approach—without sacrificing creativity.",
     about_p2: "I focus on output quality: from content and design to digital experience. This site is the professional face of the services I offer.",
+    about_p3: "Every project I work on directly—no passing to third parties. I focus on functional design and use tools like Figma and VS Code so the output is clean and ready to hand over.",
     about_vendor: "Vendor or agency in need of external capacity?",
     about_vendor_desc: "I can be your third party for execution—with a clear contract: scope, deadline, and defined compensation. Professional collaboration, not unbounded scope.",
     jasa_fresh_launch: "Rasya Production officially launched in 2026 and is now open for early collaboration.",
@@ -215,6 +218,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     services_empty: "No services yet. Add services from the admin page (Manage Services).",
     services_closed: "closed — not available to order",
     services_brief: "As per brief",
+    services_price_from: "Starting from",
     services_discount: "Discount",
     antrian_heading: "Queue",
     antrian_title: "Services in progress",

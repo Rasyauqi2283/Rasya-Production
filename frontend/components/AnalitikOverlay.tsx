@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 
 type ItemDesc = { id: string; en: string };
-type AnalitikItem = { name: string; rating?: number; desc: ItemDesc };
+type AnalitikItem = {
+  name: string;
+  rating?: number;
+  desc: ItemDesc;
+  /** Rating tools/skills untuk tampilan explain, mis. "React 4/5, VS Code, Next.js 4/5" */
+  skillsRates?: ItemDesc;
+};
 
 const CATEGORY_IDS = ["web_digital", "design", "konten_kreatif", "lain_lain"] as const;
 const CATEGORY_LABEL_KEYS: Record<(typeof CATEGORY_IDS)[number], string> = {
@@ -14,64 +20,53 @@ const CATEGORY_LABEL_KEYS: Record<(typeof CATEGORY_IDS)[number], string> = {
   lain_lain: "tag_lain",
 };
 
-// Isi per kategori dari LAYANAN-TOOLS.md + penjelasan singkat. Klik item untuk tampilkan desc.
 const ANALITIK_DATA: Record<(typeof CATEGORY_IDS)[number], AnalitikItem[]> = {
   web_digital: [
-    { name: "Go (Golang)", rating: 4, desc: { id: "Bahasa pemrograman backend, API, dan layanan performa tinggi. Tools: server, microservice, tooling.", en: "Backend language for APIs and high-performance services. Used for servers, microservices, and tooling." } },
-    { name: "Next.js", rating: 4, desc: { id: "Framework React dengan SSR, routing, dan optimasi production. Tools: VS Code, Vercel. Untuk website dan web app modern.", en: "React framework with SSR, routing, and production optimizations. Tools: VS Code, Vercel. For modern sites and web apps." } },
-    { name: "React", rating: 4, desc: { id: "Library JavaScript untuk UI interaktif berbasis komponen. Tools: VS Code, npm. Untuk single-page app dan antarmuka dinamis.", en: "JavaScript library for interactive, component-based UIs. Tools: VS Code, npm. For single-page apps and dynamic interfaces." } },
-    { name: "TypeScript", rating: 4, desc: { id: "JavaScript dengan tipe statis. Memudahkan maintain dan mengurangi error. Dipakai di hampir semua stack modern.", en: "JavaScript with static types. Improves maintainability and reduces errors. Used across modern stacks." } },
-    { name: "PostgreSQL", rating: 4, desc: { id: "Basis data relasional open-source. Untuk menyimpan dan mengolah data aplikasi, transaksi andal, query kompleks.", en: "Open-source relational database. For storing and querying application data with reliable transactions." } },
-    { name: "Node.js", rating: 3, desc: { id: "Runtime JavaScript di server. Tools: VS Code, npm. Untuk API, tooling, dan backend aplikasi.", en: "JavaScript runtime on the server. Tools: VS Code, npm. For APIs, tooling, and backend applications." } },
-    { name: "WordPress", desc: { id: "Situs berbasis WordPress. Tools: PHP, tema/plugin, Local by Flywheel. Setup tema, custom layout, integrasi konten.", en: "WordPress-based sites. Tools: PHP, themes/plugins, Local. Theme setup, custom layout, content integration." } },
-    { name: "Frontend Developer", desc: { id: "Tampilan dan interaksi di browser. Tools: VS Code, React/Vue/Next.js, Tailwind CSS, Git. Markup, styling, responsif.", en: "Browser UI and interaction. Tools: VS Code, React/Vue/Next.js, Tailwind, Git. Markup, styling, responsive." } },
-    { name: "Backend Developer", desc: { id: "Server, API, dan logika aplikasi. Tools: VS Code, Go/Node/Python, PostgreSQL, Postman, Docker. REST API, database, auth.", en: "Server, API, and app logic. Tools: VS Code, Go/Node/Python, PostgreSQL, Postman, Docker. REST API, database, auth." } },
-    { name: "Fullstack Developer", desc: { id: "Frontend + backend dalam satu proyek. Tools: VS Code, React/Next.js, Go/Node, PostgreSQL, Git, Vercel/Railway. Dari awal sampai deploy.", en: "Frontend and backend in one project. Tools: VS Code, React/Next, Go/Node, PostgreSQL, Git, Vercel/Railway. From start to deploy." } },
-    { name: "Mobile App (Android)", desc: { id: "Aplikasi Android. Tools: Android Studio, Kotlin/Java, Firebase, Play Console. UI, logic, integrasi API, publish ke Play Store.", en: "Android apps. Tools: Android Studio, Kotlin/Java, Firebase, Play Console. UI, logic, API integration, publish to Play Store." } },
-    { name: "Mobile App (iOS)", desc: { id: "Aplikasi iPhone/iPad. Tools: Xcode, Swift/SwiftUI, Firebase, App Store Connect. UI, logic, publish ke App Store.", en: "iPhone/iPad apps. Tools: Xcode, Swift/SwiftUI, Firebase, App Store Connect. UI, logic, publish to App Store." } },
+    { name: "Go (Golang)", rating: 4, desc: { id: "Bahasa pemrograman backend, API, dan layanan performa tinggi.", en: "Backend language for APIs and high-performance services." }, skillsRates: { id: "Go 4/5, VS Code, PostgreSQL, Docker.", en: "Go 4/5, VS Code, PostgreSQL, Docker." } },
+    { name: "Next.js", rating: 4, desc: { id: "Framework React dengan SSR, routing, dan optimasi production.", en: "React framework with SSR, routing, and production optimizations." }, skillsRates: { id: "Next.js 4/5, React, VS Code, Vercel.", en: "Next.js 4/5, React, VS Code, Vercel." } },
+    { name: "React", rating: 4, desc: { id: "Library JavaScript untuk UI interaktif berbasis komponen.", en: "JavaScript library for interactive, component-based UIs." }, skillsRates: { id: "React 4/5, TypeScript, VS Code, npm.", en: "React 4/5, TypeScript, VS Code, npm." } },
+    { name: "TypeScript", rating: 4, desc: { id: "JavaScript dengan tipe statis. Memudahkan maintain dan mengurangi error.", en: "JavaScript with static types. Improves maintainability." }, skillsRates: { id: "TypeScript 4/5, VS Code.", en: "TypeScript 4/5, VS Code." } },
+    { name: "PostgreSQL", rating: 4, desc: { id: "Basis data relasional open-source.", en: "Open-source relational database." }, skillsRates: { id: "PostgreSQL 4/5, SQL.", en: "PostgreSQL 4/5, SQL." } },
+    { name: "Node.js", rating: 3, desc: { id: "Runtime JavaScript di sisi server.", en: "JavaScript runtime on the server." }, skillsRates: { id: "Node.js 3/5, npm, VS Code.", en: "Node.js 3/5, npm, VS Code." } },
+    { name: "WordPress", desc: { id: "Situs berbasis WordPress.", en: "WordPress-based sites." }, skillsRates: { id: "PHP, tema/plugin, Local by Flywheel.", en: "PHP, themes/plugins, Local." } },
+    { name: "Frontend Developer", desc: { id: "Tampilan dan interaksi di browser. Markup, styling, responsif.", en: "Browser UI and interaction. Markup, styling, responsive." }, skillsRates: { id: "React 4/5, VS Code, Next.js 4/5, Tailwind CSS, Git.", en: "React 4/5, VS Code, Next.js 4/5, Tailwind CSS, Git." } },
+    { name: "Backend Developer", desc: { id: "Server, API, dan logika aplikasi. REST API, database, auth.", en: "Server, API, and app logic. REST API, database, auth." }, skillsRates: { id: "Go 4/5, Node.js 3/5, PostgreSQL, Postman, Docker.", en: "Go 4/5, Node.js 3/5, PostgreSQL, Postman, Docker." } },
+    { name: "Fullstack Developer", desc: { id: "Frontend + backend dalam satu proyek. Dari awal sampai deploy.", en: "Frontend and backend in one project. From start to deploy." }, skillsRates: { id: "React 4/5, Next.js 4/5, Go/Node, PostgreSQL, Git, Vercel/Railway.", en: "React 4/5, Next.js 4/5, Go/Node, PostgreSQL, Git, Vercel/Railway." } },
+    { name: "Mobile App (Android)", desc: { id: "Aplikasi Android. UI, logic, integrasi API, publish ke Play Store.", en: "Android apps. UI, logic, API integration, Play Store." }, skillsRates: { id: "Android Studio, Kotlin/Java, Firebase 4/5.", en: "Android Studio, Kotlin/Java, Firebase 4/5." } },
+    { name: "Mobile App (iOS)", desc: { id: "Aplikasi iPhone/iPad. UI, logic, publish ke App Store.", en: "iPhone/iPad apps. UI, logic, App Store." }, skillsRates: { id: "Xcode, Swift/SwiftUI, Firebase 4/5.", en: "Xcode, Swift/SwiftUI, Firebase 4/5." } },
   ],
   design: [
-    { name: "Figma / UI Designer", rating: 4, desc: { id: "Desain antarmuka dan prototyping. Tools: Figma, Adobe XD, Sketch. Wireframe, mockup, design system untuk web dan app.", en: "Interface design and prototyping. Tools: Figma, Adobe XD, Sketch. Wireframes, mockups, design systems for web and app." } },
-    { name: "UX Designer", desc: { id: "Pengalaman pengguna: riset, alur, usability. Tools: Figma, Miro, Maze/Useberry. User flow, wireframe, usability testing.", en: "User experience: research, flows, usability. Tools: Figma, Miro, Maze/Useberry. User flow, wireframes, usability testing." } },
-    { name: "Product Designer", desc: { id: "Produk digital dari ide ke eksekusi. Tools: Figma, Miro, Notion, Jira. Discovery, konsep fitur, koordinasi dengan dev.", en: "Digital product from idea to execution. Tools: Figma, Miro, Notion, Jira. Discovery, feature concept, coordination with dev." } },
-    { name: "Landing Page Designer", desc: { id: "Halaman tunggal fokus konversi. Tools: Figma, Framer/Webflow atau React/Next.js. Layout, CTA, visual untuk kampanye atau produk.", en: "Single-page conversion focus. Tools: Figma, Framer/Webflow or React/Next.js. Layout, CTA, visuals for campaigns or products." } },
-    { name: "Illustrator", desc: { id: "Ilustrasi orisinal. Tools: Adobe Illustrator, Procreate, Affinity Designer. Karakter, ikon, infografis, artwork digital atau cetak.", en: "Original illustrations. Tools: Adobe Illustrator, Procreate, Affinity Designer. Characters, icons, infographics, digital or print." } },
-    { name: "Motion Designer", desc: { id: "Elemen visual bergerak dan animasi. Tools: Adobe After Effects, Lottie, Rive. Motion graphic, kinetic typography untuk video atau web.", en: "Motion and animation. Tools: Adobe After Effects, Lottie, Rive. Motion graphics, kinetic typography for video or web." } },
-    { name: "Editor / Proofreader", desc: { id: "Penyuntingan naskah, konsisten, bebas typo. Tools: Google Docs, Word, Grammarly, Notion. Bahasa Indonesia/Inggris, penyeragaman istilah.", en: "Copy editing, consistency, typo-free. Tools: Google Docs, Word, Grammarly, Notion. Indonesian/English, terminology." } },
+    { name: "Figma / UI Designer", rating: 4, desc: { id: "Desain antarmuka dan prototyping.", en: "Interface design and prototyping." }, skillsRates: { id: "Figma 4/5, Adobe XD, Sketch.", en: "Figma 4/5, Adobe XD, Sketch." } },
+    { name: "UX Designer", desc: { id: "Pengalaman pengguna: riset, alur, usability.", en: "User experience: research, flows, usability." }, skillsRates: { id: "Figma 4/5, Miro, Maze/Useberry.", en: "Figma 4/5, Miro, Maze/Useberry." } },
+    { name: "Product Designer", desc: { id: "Produk digital dari ide ke eksekusi.", en: "Digital product from idea to execution." }, skillsRates: { id: "Figma 4/5, Miro, Notion, Jira.", en: "Figma 4/5, Miro, Notion, Jira." } },
+    { name: "Landing Page Designer", desc: { id: "Halaman tunggal fokus konversi.", en: "Single-page conversion focus." }, skillsRates: { id: "Figma 4/5, Framer/Webflow, React/Next.js.", en: "Figma 4/5, Framer/Webflow, React/Next.js." } },
+    { name: "Illustrator", desc: { id: "Ilustrasi orisinal.", en: "Original illustrations." }, skillsRates: { id: "Adobe Illustrator 4/5, Procreate, Affinity Designer.", en: "Adobe Illustrator 4/5, Procreate, Affinity Designer." } },
+    { name: "Motion Designer", desc: { id: "Elemen visual bergerak dan animasi.", en: "Motion and animation." }, skillsRates: { id: "After Effects 4/5, Lottie, Rive.", en: "After Effects 4/5, Lottie, Rive." } },
+    { name: "Editor / Proofreader", desc: { id: "Penyuntingan naskah, konsisten, bebas typo.", en: "Copy editing, consistency, typo-free." }, skillsRates: { id: "Google Docs, Word, Grammarly, Notion.", en: "Google Docs, Word, Grammarly, Notion." } },
   ],
   konten_kreatif: [
-    { name: "Video Editor", rating: 3, desc: { id: "Footage jadi konten siap tayang. Tools: Adobe Premiere Pro, DaVinci Resolve, CapCut. Cutting, color grading, subtitle, packaging untuk sosmed/YouTube.", en: "Footage to ready-to-publish content. Tools: Premiere Pro, DaVinci Resolve, CapCut. Cutting, color grading, subtitles, packaging." } },
-    { name: "Content Writer", rating: 4, desc: { id: "Tulisan untuk web, blog, media. Tools: Google Docs, Notion, Grammarly, Canva. Artikel, copy landing, script video, konten selaras brand dan SEO.", en: "Writing for web, blog, media. Tools: Google Docs, Notion, Grammarly, Canva. Articles, landing copy, video scripts, brand and SEO." } },
-    { name: "Copywriter", desc: { id: "Teks yang menjual dan mengajak aksi. Tools: Google Docs, Notion, Canva. Headline, CTA, deskripsi produk, kampanye iklan.", en: "Copy that sells and drives action. Tools: Google Docs, Notion, Canva. Headlines, CTAs, product descriptions, ad campaigns." } },
-    { name: "Social Media Manager", desc: { id: "Konten dan interaksi di platform sosial. Tools: Canva, Buffer/Hootsuite/Later, Meta Business Suite, Google Docs. Jadwal konten, caption, planning.", en: "Content and engagement on social platforms. Tools: Canva, Buffer/Hootsuite/Later, Meta Business Suite. Content schedule, captions, planning." } },
-    { name: "Technical Writer", desc: { id: "Dokumentasi yang mudah dipahami. Tools: Markdown, Google Docs, Confluence, Notion. User guide, dokumentasi API, artikel how-to.", en: "Clear documentation. Tools: Markdown, Google Docs, Confluence, Notion. User guides, API docs, how-to articles." } },
-    { name: "SEO Specialist", desc: { id: "Optimasi agar mudah ditemukan di mesin pencari. Tools: Google Search Console, Ahrefs/SEMrush/Ubersuggest, Google Docs, Notion. Riset kata kunci, on-page, rekomendasi konten.", en: "Optimization for search visibility. Tools: Search Console, Ahrefs/SEMrush, Google Docs, Notion. Keyword research, on-page, content recommendations." } },
-    { name: "Email Marketer", desc: { id: "Kampanye dan nurturance lewat email. Tools: Mailchimp/Brevo/Sendinblue, Google Sheets, Notion. Copy email, segmentasi, drip, newsletter.", en: "Email campaigns and nurture. Tools: Mailchimp/Brevo/Sendinblue, Google Sheets, Notion. Copy, segmentation, drip, newsletter." } },
-    { name: "Community Manager", desc: { id: "Interaksi dan keterlibatan komunitas brand. Tools: Discord, Slack, Notion, Buffer/Hootsuite. Moderasi, jadwal konten, engagement.", en: "Community interaction and engagement. Tools: Discord, Slack, Notion, Buffer/Hootsuite. Moderation, content schedule, engagement." } },
-    { name: "Brand Strategist", desc: { id: "Posisi dan narasi brand. Tools: Miro, Notion, Google Docs, Canva. Positioning, tone of voice, panduan brand.", en: "Brand position and narrative. Tools: Miro, Notion, Google Docs, Canva. Positioning, tone of voice, brand guidelines." } },
-    { name: "Transcriber", desc: { id: "Audio/video jadi naskah tertulis. Tools: Otter.ai, Rev, atau editor teks. Transkripsi wawancara, podcast, meeting.", en: "Audio/video to written text. Tools: Otter.ai, Rev, or text editor. Transcription for interviews, podcasts, meetings." } },
-    { name: "Localization Specialist", desc: { id: "Adaptasi konten ke bahasa dan konteks lokal. Tools: CAT tools (Crowdin, Lokalise), glossaries, Google Docs. Terjemahan, adaptasi budaya.", en: "Content adaptation to local language and context. Tools: CAT tools, glossaries, Google Docs. Translation, cultural adaptation." } },
-    { name: "Photographer", desc: { id: "Foto untuk konten atau branding. Tools: Kamera DSLR/mirrorless, Adobe Lightroom, Capture One. Foto produk, dokumentasi event, konten visual.", en: "Photos for content or branding. Tools: DSLR/mirrorless camera, Lightroom, Capture One. Product shots, event docs, visual content." } },
-    { name: "Videographer", desc: { id: "Pengambilan footage untuk iklan atau konten. Tools: Kamera, gimbal, Adobe Premiere/DaVinci. Shooting, angle, koordinasi dengan editor.", en: "Footage capture for ads or content. Tools: Camera, gimbal, Premiere/DaVinci. Shooting, angles, coordination with editor." } },
+    { name: "Video Editor", rating: 3, desc: { id: "Footage jadi konten siap tayang.", en: "Footage to ready-to-publish content." }, skillsRates: { id: "Premiere Pro 3/5, DaVinci Resolve, CapCut.", en: "Premiere Pro 3/5, DaVinci Resolve, CapCut." } },
+    { name: "Content Writer", rating: 4, desc: { id: "Tulisan untuk web, blog, media.", en: "Writing for web, blog, media." }, skillsRates: { id: "Google Docs, Notion 4/5, Grammarly, Canva.", en: "Google Docs, Notion 4/5, Grammarly, Canva." } },
+    { name: "Copywriter", desc: { id: "Teks yang menjual dan mengajak aksi.", en: "Copy that sells and drives action." }, skillsRates: { id: "Google Docs, Notion, Canva.", en: "Google Docs, Notion, Canva." } },
+    { name: "Social Media Manager", desc: { id: "Konten dan interaksi di platform sosial.", en: "Content and engagement on social platforms." }, skillsRates: { id: "Canva, Buffer/Hootsuite, Meta Business Suite.", en: "Canva, Buffer/Hootsuite, Meta Business Suite." } },
+    { name: "Technical Writer", desc: { id: "Dokumentasi yang mudah dipahami.", en: "Clear documentation." }, skillsRates: { id: "Markdown, Google Docs, Confluence, Notion.", en: "Markdown, Google Docs, Confluence, Notion." } },
+    { name: "SEO Specialist", desc: { id: "Optimasi agar mudah ditemukan di mesin pencari.", en: "Optimization for search visibility." }, skillsRates: { id: "Search Console, Ahrefs/SEMrush, Google Docs.", en: "Search Console, Ahrefs/SEMrush, Google Docs." } },
+    { name: "Email Marketer", desc: { id: "Kampanye dan nurturance lewat email.", en: "Email campaigns and nurture." }, skillsRates: { id: "Mailchimp/Brevo, Google Sheets, Notion.", en: "Mailchimp/Brevo, Google Sheets, Notion." } },
+    { name: "Community Manager", desc: { id: "Interaksi dan keterlibatan komunitas brand.", en: "Community interaction and engagement." }, skillsRates: { id: "Discord, Slack, Notion, Buffer.", en: "Discord, Slack, Notion, Buffer." } },
+    { name: "Brand Strategist", desc: { id: "Posisi dan narasi brand.", en: "Brand position and narrative." }, skillsRates: { id: "Miro, Notion, Google Docs, Canva.", en: "Miro, Notion, Google Docs, Canva." } },
+    { name: "Transcriber", desc: { id: "Audio/video jadi naskah tertulis.", en: "Audio/video to written text." }, skillsRates: { id: "Otter.ai, Rev, editor teks.", en: "Otter.ai, Rev, text editor." } },
+    { name: "Localization Specialist", desc: { id: "Adaptasi konten ke bahasa dan konteks lokal.", en: "Content adaptation to local language and context." }, skillsRates: { id: "CAT tools (Crowdin, Lokalise), Google Docs.", en: "CAT tools, glossaries, Google Docs." } },
+    { name: "Photographer", desc: { id: "Foto untuk konten atau branding.", en: "Photos for content or branding." }, skillsRates: { id: "Kamera DSLR/mirrorless, Lightroom, Capture One.", en: "DSLR/mirrorless, Lightroom, Capture One." } },
+    { name: "Videographer", desc: { id: "Pengambilan footage untuk iklan atau konten.", en: "Footage capture for ads or content." }, skillsRates: { id: "Kamera, gimbal, Premiere/DaVinci.", en: "Camera, gimbal, Premiere/DaVinci." } },
   ],
   lain_lain: [
-    { name: "Data Analyst", desc: { id: "Pengolahan dan penyajian data untuk keputusan bisnis. Tools: Google Sheets, Excel, SQL, Python (pandas), Looker Studio/Tableau/Power BI. Visualisasi, laporan.", en: "Data processing and presentation for business decisions. Tools: Google Sheets, Excel, SQL, Python, Looker/Tableau/Power BI. Visualization, reports." } },
-    { name: "Project Manager Digital", desc: { id: "Koordinasi proyek digital dari planning ke delivery. Tools: Jira, Trello, Notion, Google Calendar, Slack. Jadwal, task tracking, komunikasi tim.", en: "Digital project coordination from planning to delivery. Tools: Jira, Trello, Notion, Google Calendar, Slack. Schedule, task tracking, team communication." } },
-    { name: "Virtual Assistant", desc: { id: "Dukungan administratif dan operasional daring. Tools: Google Workspace, Calendly, Notion, Slack/Email. Jadwal, email, riset, tugas rutin.", en: "Remote admin and operations support. Tools: Google Workspace, Calendly, Notion, Slack/Email. Schedule, email, research, routine tasks." } },
+    { name: "Data Analyst", desc: { id: "Pengolahan dan penyajian data untuk keputusan bisnis.", en: "Data processing and presentation for business decisions." }, skillsRates: { id: "Google Sheets, Excel, SQL 4/5, Python (pandas), Looker/Tableau.", en: "Google Sheets, Excel, SQL 4/5, Python, Looker/Tableau." } },
+    { name: "Project Manager Digital", desc: { id: "Koordinasi proyek digital dari planning ke delivery.", en: "Digital project coordination from planning to delivery." }, skillsRates: { id: "Jira, Trello, Notion 4/5, Google Calendar, Slack.", en: "Jira, Trello, Notion 4/5, Google Calendar, Slack." } },
+    { name: "Virtual Assistant", desc: { id: "Dukungan administratif dan operasional daring.", en: "Remote admin and operations support." }, skillsRates: { id: "Google Workspace, Calendly, Notion, Slack.", en: "Google Workspace, Calendly, Notion, Slack." } },
   ],
 };
 
-// Build flat map name -> desc for selected item (names are unique across categories)
-function getAllDescriptions(): Record<string, ItemDesc> {
-  const out: Record<string, ItemDesc> = {};
-  for (const cat of CATEGORY_IDS) {
-    for (const item of ANALITIK_DATA[cat]) {
-      out[item.name] = item.desc;
-    }
-  }
-  return out;
-}
-const ALL_DESCRIPTIONS = getAllDescriptions();
+type ViewStep = "categories" | "items" | "explain";
 
 type Props = {
   open: boolean;
@@ -80,17 +75,25 @@ type Props = {
 
 export default function AnalitikOverlay({ open, onClose }: Props) {
   const { t, lang } = useLanguage();
-  const [layer, setLayer] = useState<1 | 2>(1);
-  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [step, setStep] = useState<ViewStep>("categories");
+  const [selectedCategory, setSelectedCategory] = useState<(typeof CATEGORY_IDS)[number] | null>(null);
+  const [selectedItem, setSelectedItem] = useState<AnalitikItem | null>(null);
+  const [layer2Open, setLayer2Open] = useState(false); // softskill layer
 
   useEffect(() => {
     if (!open) {
-      setLayer(1);
+      setStep("categories");
+      setSelectedCategory(null);
       setSelectedItem(null);
+      setLayer2Open(false);
       return;
     }
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        if (step === "explain") setStep("items");
+        else if (step === "items") setStep("categories");
+        else onClose();
+      }
     };
     document.addEventListener("keydown", handleEscape);
     document.body.style.overflow = "hidden";
@@ -98,9 +101,11 @@ export default function AnalitikOverlay({ open, onClose }: Props) {
       document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = "";
     };
-  }, [open, onClose]);
+  }, [open, step, onClose]);
 
   if (!open) return null;
+
+  const isEn = lang === "en";
 
   return (
     <div
@@ -109,126 +114,147 @@ export default function AnalitikOverlay({ open, onClose }: Props) {
       aria-labelledby="analitik-overlay-title"
       className="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div className="relative z-10 flex w-full max-w-4xl flex-col rounded-2xl border border-rasya-border bg-rasya-card shadow-xl max-h-[90vh] overflow-hidden">
+        className="relative z-10 flex w-full max-w-lg flex-col rounded-2xl border border-rasya-border bg-rasya-card shadow-xl max-h-[90vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex shrink-0 items-center justify-between border-b border-rasya-border px-4 py-3">
-          <h2
-            id="analitik-overlay-title"
-            className="font-display text-lg font-semibold text-white"
-          >
-            {layer === 1 ? t("analitik_layer1_title") : t("analitik_layer2_title")}
+          <h2 id="analitik-overlay-title" className="font-display text-lg font-semibold text-white">
+            {step === "categories" && t("analitik_layer1_title")}
+            {step === "items" && t(selectedCategory ? CATEGORY_LABEL_KEYS[selectedCategory] : "analitik_layer1_title")}
+            {step === "explain" && selectedItem?.name}
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 text-zinc-400 transition hover:bg-rasya-border hover:text-white"
-            aria-label={t("analitik_close")}
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1">
+            {step !== "categories" && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (step === "explain") {
+                    setSelectedItem(null);
+                    setStep("items");
+                  } else {
+                    setSelectedCategory(null);
+                    setStep("categories");
+                  }
+                }}
+                className="rounded-lg p-2 text-zinc-400 transition hover:bg-rasya-border hover:text-white"
+                aria-label={t("analitik_back")}
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-2 text-zinc-400 transition hover:bg-rasya-border hover:text-white"
+              aria-label={t("analitik_close")}
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {layer === 1 ? (
+          {/* Step 1: 4 category buttons (small form) */}
+          {step === "categories" && (
             <>
-              <p className="mb-4 text-sm text-zinc-400">
-                {t("analitik_layer1_desc")}
-              </p>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <p className="mb-6 text-sm text-zinc-400">{t("analitik_layer1_desc")}</p>
+              <div className="grid grid-cols-2 gap-3">
                 {CATEGORY_IDS.map((catId) => (
-                  <div
+                  <button
                     key={catId}
-                    className="rounded-xl border border-rasya-border bg-rasya-dark/40 p-4"
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(catId);
+                      setStep("items");
+                    }}
+                    className="rounded-xl border border-rasya-border bg-rasya-dark/40 px-4 py-4 text-center text-sm font-medium text-zinc-200 transition hover:border-rasya-accent/50 hover:bg-rasya-accent/10 hover:text-white"
                   >
-                    <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-rasya-accent">
-                      {t(CATEGORY_LABEL_KEYS[catId])}
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {ANALITIK_DATA[catId].map((item) => (
-                        <button
-                          key={item.name}
-                          type="button"
-                          onClick={() =>
-                            setSelectedItem(selectedItem === item.name ? null : item.name)
-                          }
-                          className={`rounded-lg border px-2.5 py-1.5 text-left text-xs transition ${
-                            selectedItem === item.name
-                              ? "border-rasya-accent bg-rasya-accent/10 text-white"
-                              : "border-rasya-border bg-rasya-dark/60 text-zinc-300 hover:border-rasya-accent/50"
-                          }`}
-                        >
-                          <span className="truncate max-w-[140px] inline-block" title={item.name}>
-                            {item.name}
-                          </span>
-                          {item.rating != null && (
-                            <span className="ml-1 text-rasya-accent">
-                              {" "}{item.rating}/5
-                            </span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                    {t(CATEGORY_LABEL_KEYS[catId])}
+                  </button>
                 ))}
               </div>
-
-              {selectedItem && ALL_DESCRIPTIONS[selectedItem] && (
-                <div className="mt-4 rounded-lg border border-rasya-accent/30 bg-rasya-accent/5 p-4">
-                  <p className="mb-2 text-sm font-medium text-white">{selectedItem}</p>
-                  <p className="text-sm text-zinc-400 leading-relaxed">
-                    {lang === "en"
-                      ? ALL_DESCRIPTIONS[selectedItem].en
-                      : ALL_DESCRIPTIONS[selectedItem].id}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedItem(null)}
-                    className="mt-3 text-xs font-medium text-rasya-accent hover:underline"
-                  >
-                    {t("analitik_close_desc")}
-                  </button>
-                </div>
-              )}
-
               <div className="mt-6 flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setLayer(2)}
+                  onClick={() => setLayer2Open(true)}
                   className="rounded-lg bg-rasya-accent px-4 py-2 text-sm font-medium text-rasya-dark transition hover:opacity-90"
                 >
                   {t("analitik_next")}
                 </button>
               </div>
             </>
-          ) : (
-            <>
-              <p className="text-lg text-zinc-300 leading-relaxed">
-                {t("analitik_layer2_text")}
+          )}
+
+          {/* Step 2: Items in selected category */}
+          {step === "items" && selectedCategory && (
+            <div className="space-y-4">
+              <p className="text-sm text-zinc-400">
+                {isEn ? "Choose one to see details and skill/tool ratings." : "Pilih satu untuk melihat penjelasan dan rating tools."}
               </p>
-              <div className="mt-6 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setLayer(1)}
-                  className="rounded-lg border border-rasya-border px-4 py-2 text-sm font-medium text-zinc-300 transition hover:bg-rasya-border hover:text-white"
-                >
-                  {t("analitik_back")}
-                </button>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="rounded-lg bg-rasya-primary px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
-                >
-                  {t("analitik_close")}
-                </button>
+              <div className="flex flex-wrap gap-2">
+                {ANALITIK_DATA[selectedCategory].map((item) => (
+                  <button
+                    key={item.name}
+                    type="button"
+                    onClick={() => {
+                      setSelectedItem(item);
+                      setStep("explain");
+                    }}
+                    className="rounded-lg border border-rasya-border bg-rasya-dark/60 px-3 py-2 text-left text-sm text-zinc-300 transition hover:border-rasya-accent/50 hover:text-white"
+                  >
+                    {item.name}
+                    {item.rating != null && <span className="ml-1 text-rasya-accent">{item.rating}/5</span>}
+                  </button>
+                ))}
               </div>
-            </>
+            </div>
+          )}
+
+          {/* Step 3: Explain — judul + skillsRates (rating tools) + desc */}
+          {step === "explain" && selectedItem && (
+            <div className="space-y-4">
+              {selectedItem.skillsRates && (
+                <div className="rounded-lg border border-rasya-accent/30 bg-rasya-accent/10 px-4 py-3">
+                  <p className="text-xs font-medium uppercase tracking-wider text-rasya-accent">
+                    {isEn ? "Skills & tools" : "Skills & tools"}
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-200">
+                    {isEn ? selectedItem.skillsRates.en : selectedItem.skillsRates.id}
+                  </p>
+                </div>
+              )}
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                {isEn ? selectedItem.desc.en : selectedItem.desc.id}
+              </p>
+              <button
+                type="button"
+                onClick={() => setStep("items")}
+                className="text-xs font-medium text-rasya-accent hover:underline"
+              >
+                {t("analitik_back")} ← {selectedCategory ? t(CATEGORY_LABEL_KEYS[selectedCategory]) : ""}
+              </button>
+            </div>
+          )}
+
+          {/* Softskill teks (dari tombol Lanjut di step categories) */}
+          {step === "categories" && layer2Open && (
+            <div className="mt-6 rounded-lg border border-rasya-accent/20 bg-rasya-accent/5 p-4">
+              <p className="text-sm font-medium text-rasya-accent mb-2">{t("analitik_layer2_title")}</p>
+              <p className="text-zinc-300 leading-relaxed">{t("analitik_layer2_text")}</p>
+              <button
+                type="button"
+                onClick={() => setLayer2Open(false)}
+                className="mt-3 text-xs font-medium text-rasya-accent hover:underline"
+              >
+                {t("analitik_close_desc")}
+              </button>
+            </div>
           )}
         </div>
       </div>
