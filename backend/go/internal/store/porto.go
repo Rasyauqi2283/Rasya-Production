@@ -123,6 +123,130 @@ func (p *PortoStore) listDB() []PortoItem {
 	return out
 }
 
+// SeedIfEmpty inserts 4 default portfolio items when the store is empty (for demo/trust).
+func (p *PortoStore) SeedIfEmpty() {
+	if p.pool != nil {
+		p.seedIfEmptyDB()
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if len(p.items) > 0 {
+		return
+	}
+	seeds := []struct {
+		title, tag, desc, imageURL, linkURL string
+		layanan                             []string
+	}{
+		{
+			"Website Company Profile — F&B",
+			"Web & Digital",
+			"Website one-page company profile untuk brand F&B: hero, tentang, menu unggulan, galeri, dan kontak. Desain bersih, responsif, dan siap dipakai di desktop dan mobile.",
+			"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=450&fit=crop",
+			"",
+			[]string{"Web & Digital", "UI Designer"},
+		},
+		{
+			"Branding & Social Asset Pack",
+			"Design",
+			"Paket branding untuk startup: logo, palet warna, template feed Instagram dan story. Konsisten di semua touchpoint dan siap dipakai tim marketing.",
+			"https://images.unsplash.com/photo-1561070791-2526d31fe5b6?w=800&h=450&fit=crop",
+			"",
+			[]string{"Design", "Illustrator"},
+		},
+		{
+			"Landing Page Kampanye Produk",
+			"Web & Digital",
+			"Landing page untuk kampanye produk terbaru: headline, benefit, CTA, dan form lead. Fokus konversi dan integrasi dengan CRM.",
+			"https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=450&fit=crop",
+			"",
+			[]string{"Web & Digital", "Landing Page Designer"},
+		},
+		{
+			"Video Promo & Motion Teaser",
+			"Konten & Kreatif",
+			"Video promo 60 detik dan motion teaser untuk peluncuran layanan. Editing, color grading, dan motion graphic sesuai brief brand.",
+			"https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&h=450&fit=crop",
+			"",
+			[]string{"Video Editor", "Motion Designer"},
+		},
+	}
+	for _, s := range seeds {
+		item := PortoItem{
+			ID:          generateID(),
+			Title:       s.title,
+			Tag:         s.tag,
+			Description: s.desc,
+			ImageURL:    s.imageURL,
+			LinkURL:     s.linkURL,
+			Layanan:     s.layanan,
+			CreatedAt:   time.Now().UTC(),
+		}
+		p.items = append(p.items, item)
+	}
+}
+
+func (p *PortoStore) seedIfEmptyDB() {
+	ctx := context.Background()
+	var n int
+	if err := p.pool.QueryRow(ctx, `SELECT COUNT(*) FROM porto`).Scan(&n); err != nil || n > 0 {
+		return
+	}
+	seeds := []struct {
+		title, tag, desc, imageURL, linkURL string
+		layanan                             []string
+	}{
+		{
+			"Website Company Profile — F&B",
+			"Web & Digital",
+			"Website one-page company profile untuk brand F&B: hero, tentang, menu unggulan, galeri, dan kontak. Desain bersih, responsif, dan siap dipakai di desktop dan mobile.",
+			"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=450&fit=crop",
+			"",
+			[]string{"Web & Digital", "UI Designer"},
+		},
+		{
+			"Branding & Social Asset Pack",
+			"Design",
+			"Paket branding untuk startup: logo, palet warna, template feed Instagram dan story. Konsisten di semua touchpoint dan siap dipakai tim marketing.",
+			"https://images.unsplash.com/photo-1561070791-2526d31fe5b6?w=800&h=450&fit=crop",
+			"",
+			[]string{"Design", "Illustrator"},
+		},
+		{
+			"Landing Page Kampanye Produk",
+			"Web & Digital",
+			"Landing page untuk kampanye produk terbaru: headline, benefit, CTA, dan form lead. Fokus konversi dan integrasi dengan CRM.",
+			"https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=450&fit=crop",
+			"",
+			[]string{"Web & Digital", "Landing Page Designer"},
+		},
+		{
+			"Video Promo & Motion Teaser",
+			"Konten & Kreatif",
+			"Video promo 60 detik dan motion teaser untuk peluncuran layanan. Editing, color grading, dan motion graphic sesuai brief brand.",
+			"https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&h=450&fit=crop",
+			"",
+			[]string{"Video Editor", "Motion Designer"},
+		},
+	}
+	for _, s := range seeds {
+		item := PortoItem{
+			ID:          generateID(),
+			Title:       s.title,
+			Tag:         s.tag,
+			Description: s.desc,
+			ImageURL:    s.imageURL,
+			LinkURL:     s.linkURL,
+			Layanan:     s.layanan,
+			CreatedAt:   time.Now().UTC(),
+		}
+		jb, _ := json.Marshal(item.Layanan)
+		_, _ = p.pool.Exec(ctx, `INSERT INTO porto (id, title, tag, description, image_url, link_url, layanan, created_at)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+			item.ID, item.Title, item.Tag, item.Description, item.ImageURL, item.LinkURL, jb, item.CreatedAt)
+	}
+}
+
 // Delete removes a porto item by ID.
 func (p *PortoStore) Delete(id string) bool {
 	if p.pool != nil {

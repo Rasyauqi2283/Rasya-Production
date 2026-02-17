@@ -42,6 +42,7 @@ func main() {
 		serviceStore = store.NewServiceStoreFromDB(pool)
 		serviceStore.SeedIfEmpty()
 		portoStore = store.NewPortoStoreFromDB(pool)
+		portoStore.SeedIfEmpty()
 		orderStore = store.NewOrderStoreFromDB(pool)
 		taperStore = store.NewTaperStoreFromDB(pool)
 		log.Println("Raspro connected to PostgreSQL (real-time persistent)")
@@ -50,6 +51,7 @@ func main() {
 		serviceStore = store.NewServiceStore()
 		serviceStore.SeedIfEmpty()
 		portoStore = store.NewPortoStore()
+		portoStore.SeedIfEmpty()
 		orderStore = store.NewOrderStore()
 		taperStore = store.NewTaperStore()
 	}

@@ -8,7 +8,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     nav_porto: "Porto",
     nav_contact: "Kontak",
     // Hero
-    hero_tagline: "Creative Production & Digital",
+    hero_tagline: "Turning Ideas Into Digital Reality",
     hero_subtitle: "Dari konsep sampai deliver. Konten, desain, dan solusi digital yang dibangun dengan presisi—untuk brand dan bisnis Anda.",
     hero_cta_project: "Mulai Proyek",
     hero_cta_about: "Tentang Saya",
@@ -147,7 +147,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     nav_services: "Services",
     nav_porto: "Portfolio",
     nav_contact: "Contact",
-    hero_tagline: "Creative Production & Digital",
+    hero_tagline: "Turning Ideas Into Digital Reality",
     hero_subtitle: "From concept to delivery. Content, design, and digital solutions built with precision—for your brand and business.",
     hero_cta_project: "Start Project",
     hero_cta_about: "About Me",
