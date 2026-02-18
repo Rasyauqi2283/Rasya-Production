@@ -357,13 +357,13 @@ type AnalitikItemType = {
 
 function AdminAnalitik({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) {
   const [items, setItems] = useState<AnalitikItemType[]>([]);
-  const [category, setCategory] = useState(ANALITIK_CATEGORIES[0].value);
+  const [category, setCategory] = useState<string>(ANALITIK_CATEGORIES[0].value);
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<AnalitikItemType | null>(null);
   const [editName, setEditName] = useState("");
-  const [editCategory, setEditCategory] = useState(ANALITIK_CATEGORIES[0].value);
+  const [editCategory, setEditCategory] = useState<string>(ANALITIK_CATEGORIES[0].value);
   const [editDesc, setEditDesc] = useState("");
   const [daftarOpen, setDaftarOpen] = useState(false);
 
