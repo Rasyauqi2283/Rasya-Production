@@ -26,6 +26,9 @@ func OrdersAntrian(w http.ResponseWriter, r *http.Request) {
 	list := OrderStore.List()
 	antrian := make([]string, 0, len(list))
 	for _, item := range list {
+		if item.Status != "in_progress" {
+			continue
+		}
 		s := strings.TrimSpace(item.Layanan)
 		if s != "" {
 			antrian = append(antrian, s)
@@ -178,6 +181,32 @@ func RevisiKlaim(w http.ResponseWriter, r *http.Request) {
 		"revisi_ke":     ticket.Sequence,
 		"sisa_revisi":   remaining,
 	})
+}
+
+// OrdersComplete handles PATCH /api/admin/orders?id=xxx (body: {"complete": true}) to mark order as completed.
+func OrdersComplete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if OrderStore == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	ok := OrderStore.Complete(id)
+	w.Header().Set("Content-Type", "application/json")
+	if ok {
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true})
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "not found"})
+	}
 }
 
 // OrdersDelete handles DELETE /api/admin/orders?id=xxx.

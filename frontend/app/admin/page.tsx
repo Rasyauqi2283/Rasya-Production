@@ -95,6 +95,21 @@ function formatCountdown(deadlineRaw: string, nowMs: number): string {
   return passed ? `Lewat ${core}` : `Sisa ${core}`;
 }
 
+/** Waktu pengerjaan (jam) dari created_at sampai completed_at; estimasi jam dari created_at ke deadline. */
+function orderTimeSpent(o: OrderItem): { hoursSpent: number; estimasiHours: number; scoreLabel: string } {
+  const created = o.created_at ? new Date(o.created_at).getTime() : 0;
+  const completed = o.completed_at ? new Date(o.completed_at).getTime() : 0;
+  const hoursSpent = created && completed && completed >= created ? Math.round((completed - created) / (1000 * 60 * 60)) : 0;
+  const deadline = parseDeadlineDate(o.deadline);
+  const estimasiHours = deadline && created ? Math.max(0, Math.round((deadline.getTime() - created) / (1000 * 60 * 60))) : 0;
+  const scoreLabel = hoursSpent > 0
+    ? estimasiHours > 0
+      ? `${hoursSpent} jam (estimasi ${estimasiHours} jam)`
+      : `Selesai dalam ${hoursSpent} jam`
+    : "—";
+  return { hoursSpent, estimasiHours, scoreLabel };
+}
+
 /** Build "Add to Google Calendar" URL untuk satu order (deadline + pemesan + layanan). */
 function buildGoogleCalendarUrl(o: OrderItem): string {
   const title = [o.layanan?.trim(), o.pemesan?.trim()].filter(Boolean).join(" — ") || "Order Layanan";
@@ -165,6 +180,8 @@ type OrderItem = {
   mulai_tanggal: string;
   kesepakatan_brief_uang: string;
   kapan_uang_masuk: string;
+  status?: string;
+  completed_at?: string;
   created_at: string;
   tickets?: RevisionTicket[];
 };
@@ -1083,6 +1100,7 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
   const [kapanUangMasuk, setKapanUangMasuk] = useState("");
   const [loading, setLoading] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
+  const [orderListTab, setOrderListTab] = useState<"in_progress" | "completed">("in_progress");
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -1157,7 +1175,16 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
     if (res.ok) fetchOrders();
   };
 
-  const byPemesan = orders.reduce<Map<string, Map<string, OrderItem[]>>>((acc, o) => {
+  const completeOrder = async (id: string) => {
+    const res = await fetch(`${apiUrl}/api/admin/orders?id=${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: headers(adminKey),
+    });
+    if (res.ok) fetchOrders();
+  };
+
+  const ordersFiltered = orders.filter((o) => (o.status || "in_progress") === orderListTab);
+  const byPemesan = ordersFiltered.reduce<Map<string, Map<string, OrderItem[]>>>((acc, o) => {
     const pemesanKey = o.pemesan?.trim() || "(Tanpa nama pemesan)";
     const layananKey = o.layanan.trim() || "(Tanpa layanan)";
     if (!acc.has(pemesanKey)) acc.set(pemesanKey, new Map());
@@ -1244,7 +1271,7 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
             className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white placeholder-zinc-500 focus:border-rasya-accent focus:outline-none"
           />
         </div>
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-2 flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={add}
@@ -1253,10 +1280,26 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
           >
             Tambah order
           </button>
+          <button
+            type="button"
+            onClick={() => setOrderListTab("in_progress")}
+            className={`rounded-lg px-4 py-2 font-medium border transition ${orderListTab === "in_progress" ? "bg-rasya-accent/20 border-rasya-accent text-rasya-accent" : "border-rasya-border text-zinc-400 hover:text-white"}`}
+          >
+            Order dalam pengerjaan
+          </button>
+          <button
+            type="button"
+            onClick={() => setOrderListTab("completed")}
+            className={`rounded-lg px-4 py-2 font-medium border transition ${orderListTab === "completed" ? "bg-rasya-accent/20 border-rasya-accent text-rasya-accent" : "border-rasya-border text-zinc-400 hover:text-white"}`}
+          >
+            Order terselesaikan
+          </button>
         </div>
       </div>
-      {orders.length === 0 ? (
-        <p className="text-sm text-zinc-500">Belum ada order. Tambah dari form di atas.</p>
+      {ordersFiltered.length === 0 ? (
+        <p className="text-sm text-zinc-500">
+          {orderListTab === "in_progress" ? "Belum ada order dalam pengerjaan. Tambah dari form di atas." : "Belum ada order terselesaikan. Gunakan tombol Simpan pada order untuk memindahkan ke sini."}
+        </p>
       ) : (
         <div className="space-y-6">
           {Array.from(byPemesan.entries()).map(([namaPemesan, layananMap]) => (
@@ -1279,11 +1322,27 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
                               <p className="text-xs text-zinc-500 mt-1">
                                 Deadline: {formatDateDDMMYYYY(o.deadline)} · Mulai: {formatDateDDMMYYYY(o.mulai_tanggal)} · Uang: {o.kesepakatan_brief_uang || "—"} · Masuk: {formatDateDDMMYYYY(o.kapan_uang_masuk)}
                               </p>
-                              <p className="text-xs mt-1 text-amber-300">
-                                Countdown: {formatCountdown(o.deadline, nowMs)}
-                              </p>
+                              {orderListTab === "in_progress" ? (
+                                <p className="text-xs mt-1 text-amber-300">
+                                  Countdown: {formatCountdown(o.deadline, nowMs)}
+                                </p>
+                              ) : (
+                                (() => {
+                                  const { hoursSpent, scoreLabel } = orderTimeSpent(o);
+                                  return (
+                                    <>
+                                      <p className="text-xs mt-1 text-emerald-400">
+                                        Waktu pengerjaan: {hoursSpent > 0 ? `${hoursSpent} jam` : "—"}
+                                      </p>
+                                      <p className="text-xs mt-0.5 text-rasya-accent">
+                                        Score: {scoreLabel}
+                                      </p>
+                                    </>
+                                  );
+                                })()
+                              )}
                             </div>
-                            <div className="flex flex-wrap items-center gap-2 shrink-0">
+                            <div className="flex flex-col items-end gap-1 shrink-0">
                               <a
                                 href={buildGoogleCalendarUrl(o)}
                                 target="_blank"
@@ -1293,6 +1352,15 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
                                 <span aria-hidden>📅</span>
                                 Tambah ke Google Calendar
                               </a>
+                              {orderListTab === "in_progress" && (
+                                <button
+                                  type="button"
+                                  onClick={() => completeOrder(o.id)}
+                                  className="text-sm text-rasya-accent hover:text-rasya-accent/80 font-medium"
+                                >
+                                  Simpan
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => del(o.id)}

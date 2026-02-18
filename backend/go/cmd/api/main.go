@@ -115,6 +115,7 @@ func main() {
 		r.Delete("/api/admin/porto", handlers.PortoDelete)
 		r.Get("/api/admin/orders", handlers.OrdersListAll)
 		r.Post("/api/admin/orders", handlers.OrdersAdd)
+		r.Patch("/api/admin/orders", handlers.OrdersComplete)
 		r.Delete("/api/admin/orders", handlers.OrdersDelete)
 		r.Get("/api/admin/agreement/sample", handlers.AgreementSamplePDF)
 		r.Post("/api/admin/agreement/pdf", handlers.AgreementPDF)

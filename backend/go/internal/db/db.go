@@ -75,6 +75,8 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 		`ALTER TABLE porto ADD COLUMN IF NOT EXISTS closed BOOLEAN NOT NULL DEFAULT false`,
 		`ALTER TABLE porto ADD COLUMN IF NOT EXISTS tools_used JSONB NOT NULL DEFAULT '[]'`,
 		`ALTER TABLE orders ADD COLUMN IF NOT EXISTS pemesan TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE orders ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'in_progress'`,
+		`ALTER TABLE orders ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ`,
 		`CREATE TABLE IF NOT EXISTS taper_otps (
 			code TEXT PRIMARY KEY,
 			label TEXT NOT NULL DEFAULT '',

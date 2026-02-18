@@ -10,15 +10,17 @@ import (
 
 // OrderItem is one order layanan (sedang dikerjakan / antrian).
 type OrderItem struct {
-	ID                   string    `json:"id"`
-	Layanan              string    `json:"layanan"`               // nama layanan (e.g. UI Designer)
-	Pemesan              string    `json:"pemesan"`               // siapa yang order
-	DeskripsiPekerjaan   string    `json:"deskripsi_pekerjaan"`   // apa yang akan dikerjakan
-	Deadline             string    `json:"deadline"`              // deadline (YYYY-MM-DD atau teks)
-	MulaiTanggal         string    `json:"mulai_tanggal"`          // mulai tanggal
-	KesepakatanBriefUang string    `json:"kesepakatan_brief_uang"` // kesepakatan uang (brief)
-	KapanUangMasuk       string    `json:"kapan_uang_masuk"`       // kapan uang masuk
-	CreatedAt            time.Time `json:"created_at"`
+	ID                   string     `json:"id"`
+	Layanan              string     `json:"layanan"`                // nama layanan (e.g. UI Designer)
+	Pemesan              string     `json:"pemesan"`                // siapa yang order
+	DeskripsiPekerjaan   string     `json:"deskripsi_pekerjaan"`    // apa yang akan dikerjakan
+	Deadline             string     `json:"deadline"`               // deadline (YYYY-MM-DD atau teks)
+	MulaiTanggal         string     `json:"mulai_tanggal"`          // mulai tanggal
+	KesepakatanBriefUang string     `json:"kesepakatan_brief_uang"`  // kesepakatan uang (brief)
+	KapanUangMasuk       string     `json:"kapan_uang_masuk"`       // kapan uang masuk
+	Status               string     `json:"status"`                 // in_progress | completed
+	CompletedAt          *time.Time `json:"completed_at,omitempty"` // ketika diselesaikan
+	CreatedAt            time.Time  `json:"created_at"`
 }
 
 // OrderStore holds order layanan in memory or PostgreSQL (when pool is set).
@@ -56,6 +58,7 @@ func (o *OrderStore) Add(layanan, pemesan, deskripsi, deadline, mulai, kesepakat
 		KapanUangMasuk:       uangMasuk,
 		CreatedAt:            time.Now().UTC(),
 	}
+	item.Status = "in_progress"
 	o.items = append(o.items, item)
 	return item
 }
@@ -70,12 +73,13 @@ func (o *OrderStore) addDB(layanan, pemesan, deskripsi, deadline, mulai, kesepak
 		MulaiTanggal:         mulai,
 		KesepakatanBriefUang: kesepakatan,
 		KapanUangMasuk:       uangMasuk,
+		Status:               "in_progress",
 		CreatedAt:            time.Now().UTC(),
 	}
 	ctx := context.Background()
-	_, err := o.pool.Exec(ctx, `INSERT INTO orders (id, layanan, pemesan, deskripsi_pekerjaan, deadline, mulai_tanggal, kesepakatan_brief_uang, kapan_uang_masuk, created_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-		item.ID, item.Layanan, item.Pemesan, item.DeskripsiPekerjaan, item.Deadline, item.MulaiTanggal, item.KesepakatanBriefUang, item.KapanUangMasuk, item.CreatedAt)
+	_, err := o.pool.Exec(ctx, `INSERT INTO orders (id, layanan, pemesan, deskripsi_pekerjaan, deadline, mulai_tanggal, kesepakatan_brief_uang, kapan_uang_masuk, status, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+		item.ID, item.Layanan, item.Pemesan, item.DeskripsiPekerjaan, item.Deadline, item.MulaiTanggal, item.KesepakatanBriefUang, item.KapanUangMasuk, item.Status, item.CreatedAt)
 	if err != nil {
 		return OrderItem{}
 	}
@@ -99,7 +103,7 @@ func (o *OrderStore) List() []OrderItem {
 
 func (o *OrderStore) listDB() []OrderItem {
 	ctx := context.Background()
-	rows, err := o.pool.Query(ctx, `SELECT id, layanan, pemesan, deskripsi_pekerjaan, deadline, mulai_tanggal, kesepakatan_brief_uang, kapan_uang_masuk, created_at FROM orders ORDER BY created_at DESC`)
+	rows, err := o.pool.Query(ctx, `SELECT id, layanan, pemesan, deskripsi_pekerjaan, deadline, mulai_tanggal, kesepakatan_brief_uang, kapan_uang_masuk, status, completed_at, created_at FROM orders ORDER BY created_at DESC`)
 	if err != nil {
 		return nil
 	}
@@ -107,12 +111,39 @@ func (o *OrderStore) listDB() []OrderItem {
 	var out []OrderItem
 	for rows.Next() {
 		var item OrderItem
-		if err := rows.Scan(&item.ID, &item.Layanan, &item.Pemesan, &item.DeskripsiPekerjaan, &item.Deadline, &item.MulaiTanggal, &item.KesepakatanBriefUang, &item.KapanUangMasuk, &item.CreatedAt); err != nil {
+		if err := rows.Scan(&item.ID, &item.Layanan, &item.Pemesan, &item.DeskripsiPekerjaan, &item.Deadline, &item.MulaiTanggal, &item.KesepakatanBriefUang, &item.KapanUangMasuk, &item.Status, &item.CompletedAt, &item.CreatedAt); err != nil {
 			return out
+		}
+		if item.Status == "" {
+			item.Status = "in_progress"
 		}
 		out = append(out, item)
 	}
 	return out
+}
+
+// Complete marks an order as completed (status=completed, completed_at=now).
+func (o *OrderStore) Complete(id string) bool {
+	if o.pool != nil {
+		return o.completeDB(id)
+	}
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	now := time.Now().UTC()
+	for i := range o.items {
+		if o.items[i].ID == id {
+			o.items[i].Status = "completed"
+			o.items[i].CompletedAt = &now
+			return true
+		}
+	}
+	return false
+}
+
+func (o *OrderStore) completeDB(id string) bool {
+	ctx := context.Background()
+	_, err := o.pool.Exec(ctx, `UPDATE orders SET status = 'completed', completed_at = $1 WHERE id = $2`, time.Now().UTC(), id)
+	return err == nil
 }
 
 // Delete removes an order by ID.
