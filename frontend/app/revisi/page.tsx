@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -14,7 +14,7 @@ type ClaimResult = {
   sisa_revisi?: number;
 };
 
-export default function RevisiPage() {
+function RevisiContent() {
   const searchParams = useSearchParams();
   const kodeFromUrl = searchParams.get("kode") ?? "";
   const [code, setCode] = useState("");
@@ -89,5 +89,24 @@ export default function RevisiPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function RevisiPage() {
+  return (
+    <Suspense fallback={
+      <div className="mx-auto max-w-md px-6 py-16">
+        <div className="mb-8 h-5 w-24 rounded bg-rasya-dark animate-pulse" />
+        <div className="mb-2 h-5 w-48 rounded bg-rasya-dark animate-pulse" />
+        <div className="mb-6 h-4 max-w-sm rounded bg-rasya-dark/80 animate-pulse" />
+        <div className="rounded-xl border border-rasya-border bg-rasya-card p-6">
+          <div className="h-4 w-24 rounded bg-rasya-dark/80 animate-pulse mb-2" />
+          <div className="h-12 w-full rounded-lg bg-rasya-dark animate-pulse" />
+          <div className="mt-4 h-12 w-full rounded-lg bg-rasya-dark animate-pulse" />
+        </div>
+      </div>
+    }>
+      <RevisiContent />
+    </Suspense>
   );
 }
