@@ -14,7 +14,6 @@ export default function RamadanAdOverlay() {
   const touchEndX = useRef(0);
 
   const showAd = pathname === "/" || (pathname != null && pathname.startsWith("/layanan-preview"));
-  if (!showAd) return null;
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(false), AUTO_CLOSE_MS);
@@ -56,7 +55,7 @@ export default function RamadanAdOverlay() {
     if (diff > minSwipe) goTo(currentSlide - 1);
   };
 
-  if (!visible) return null;
+  if (!showAd || !visible) return null;
 
   return (
     <div
