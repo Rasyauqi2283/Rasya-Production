@@ -118,6 +118,16 @@ type Donation = {
   highlighted: boolean;
   created_at: string;
 };
+type RevisionTicket = {
+  id: string;
+  order_id: string;
+  code: string;
+  sequence: number;
+  status: string;
+  used_at?: string;
+  note?: string;
+  created_at: string;
+};
 type OrderItem = {
   id: string;
   layanan: string;
@@ -128,6 +138,7 @@ type OrderItem = {
   kesepakatan_brief_uang: string;
   kapan_uang_masuk: string;
   created_at: string;
+  tickets?: RevisionTicket[];
 };
 type PortoItem = {
   id: string;
@@ -979,23 +990,58 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
                     </div>
                     <ul className="divide-y divide-rasya-border/40">
                       {items.map((o) => (
-                        <li key={o.id} className="flex justify-between gap-4 p-3">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm text-zinc-300">{o.deskripsi_pekerjaan || "—"}</p>
-                            <p className="text-xs text-zinc-500 mt-1">
-                              Deadline: {formatDateDDMMYYYY(o.deadline)} · Mulai: {formatDateDDMMYYYY(o.mulai_tanggal)} · Uang: {o.kesepakatan_brief_uang || "—"} · Masuk: {formatDateDDMMYYYY(o.kapan_uang_masuk)}
-                            </p>
-                            <p className="text-xs mt-1 text-amber-300">
-                              Countdown: {formatCountdown(o.deadline, nowMs)}
-                            </p>
+                        <li key={o.id} className="flex flex-col gap-3 p-3">
+                          <div className="flex justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm text-zinc-300">{o.deskripsi_pekerjaan || "—"}</p>
+                              <p className="text-xs text-zinc-500 mt-1">
+                                Deadline: {formatDateDDMMYYYY(o.deadline)} · Mulai: {formatDateDDMMYYYY(o.mulai_tanggal)} · Uang: {o.kesepakatan_brief_uang || "—"} · Masuk: {formatDateDDMMYYYY(o.kapan_uang_masuk)}
+                              </p>
+                              <p className="text-xs mt-1 text-amber-300">
+                                Countdown: {formatCountdown(o.deadline, nowMs)}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => del(o.id)}
+                              className="text-sm text-red-400 hover:text-red-300 shrink-0"
+                            >
+                              Hapus
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => del(o.id)}
-                            className="text-sm text-red-400 hover:text-red-300 shrink-0"
-                          >
-                            Hapus
-                          </button>
+                          {o.tickets && o.tickets.length > 0 && (
+                            <div className="rounded-lg border border-rasya-border/60 bg-rasya-dark/60 p-3">
+                              <p className="text-xs font-mono text-rasya-accent mb-2">Kupon revisi (serahkan ke client)</p>
+                              <div className="flex flex-wrap gap-3">
+                                {o.tickets.map((t) => {
+                                  const claimUrl = typeof window !== "undefined" ? `${window.location.origin}/revisi?kode=${encodeURIComponent(t.code)}` : "";
+                                  const usedAt = t.used_at ? formatDateWIB(t.used_at) : null;
+                                  return (
+                                    <div key={t.id} className={`rounded border px-3 py-2 text-sm ${t.status === "used" ? "border-zinc-600 bg-zinc-800/50" : "border-rasya-accent/50 bg-rasya-accent/10"}`}>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-mono text-rasya-accent">Revisi {t.sequence}</span>
+                                        <span className="text-zinc-400">·</span>
+                                        <span className="font-mono">{t.code}</span>
+                                        <span className={t.status === "used" ? "text-amber-400 text-xs" : "text-emerald-400 text-xs"}>
+                                          {t.status === "used" ? "Sudah dipakai" : "Belum dipakai"}
+                                        </span>
+                                      </div>
+                                      {usedAt && <p className="text-xs text-zinc-500 mt-1">Dipakai: {usedAt}</p>}
+                                      {t.status === "unused" && claimUrl && (
+                                        <button
+                                          type="button"
+                                          onClick={() => { navigator.clipboard.writeText(claimUrl); }}
+                                          className="mt-2 text-xs text-rasya-accent hover:underline"
+                                        >
+                                          Salin link klaim
+                                        </button>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </li>
                       ))}
                     </ul>

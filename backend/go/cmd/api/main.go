@@ -25,6 +25,7 @@ func main() {
 	var serviceStore *store.ServiceStore
 	var portoStore *store.PortoStore
 	var orderStore *store.OrderStore
+	var revisionTicketStore *store.RevisionTicketStore
 	var taperStore *store.TaperStore
 
 	if cfg.DatabaseURL != "" {
@@ -44,6 +45,7 @@ func main() {
 		portoStore = store.NewPortoStoreFromDB(pool)
 		portoStore.SeedIfEmpty()
 		orderStore = store.NewOrderStoreFromDB(pool)
+		revisionTicketStore = store.NewRevisionTicketStoreFromDB(pool)
 		taperStore = store.NewTaperStoreFromDB(pool)
 		log.Println("Raspro connected to PostgreSQL (real-time persistent)")
 	} else {
@@ -53,6 +55,7 @@ func main() {
 		portoStore = store.NewPortoStore()
 		portoStore.SeedIfEmpty()
 		orderStore = store.NewOrderStore()
+		revisionTicketStore = store.NewRevisionTicketStore()
 		taperStore = store.NewTaperStore()
 	}
 
@@ -62,6 +65,7 @@ func main() {
 	handlers.PortoStore = portoStore
 	handlers.PortoCfg = cfg
 	handlers.OrderStore = orderStore
+	handlers.RevisionTicketStore = revisionTicketStore
 	handlers.AuthCfg = cfg
 	handlers.TaperStore = taperStore
 	handlers.TaperCfg = cfg
@@ -80,6 +84,7 @@ func main() {
 	r.Get("/api/services", handlers.ServicesList)
 	r.Get("/api/porto", handlers.PortoList)
 	r.Get("/api/orders/antrian", handlers.OrdersAntrian)
+	r.Post("/api/revisi/klaim", handlers.RevisiKlaim)
 	r.Post("/api/auth/admin", handlers.AuthAdmin)
 	r.Post("/api/taper/verify", handlers.TaperVerify)
 	r.Post("/api/taper/sign", handlers.TaperSign)

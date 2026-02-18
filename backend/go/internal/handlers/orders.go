@@ -9,6 +9,7 @@ import (
 )
 
 var OrderStore *store.OrderStore
+var RevisionTicketStore *store.RevisionTicketStore
 
 // OrdersAntrian handles GET /api/orders/antrian (public: hanya nama layanan, tanpa price/detail).
 func OrdersAntrian(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +36,13 @@ func OrdersAntrian(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "antrian": antrian})
 }
 
-// OrdersListAll handles GET /api/admin/orders (full list for admin).
+// OrderWithTickets embeds revision tickets for admin.
+type OrderWithTickets struct {
+	store.OrderItem
+	Tickets []store.RevisionTicket `json:"tickets"`
+}
+
+// OrdersListAll handles GET /api/admin/orders (full list for admin, with revision tickets).
 func OrdersListAll(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -44,13 +51,21 @@ func OrdersListAll(w http.ResponseWriter, r *http.Request) {
 	if OrderStore == nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "orders": []store.OrderItem{}})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "orders": []OrderWithTickets{}})
 		return
 	}
 	list := OrderStore.List()
+	out := make([]OrderWithTickets, 0, len(list))
+	for _, o := range list {
+		ow := OrderWithTickets{OrderItem: o}
+		if RevisionTicketStore != nil {
+			ow.Tickets = RevisionTicketStore.ByOrderID(o.ID)
+		}
+		out = append(out, ow)
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "orders": list})
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "orders": out})
 }
 
 // OrderAddRequest for POST /api/admin/orders.
@@ -95,9 +110,74 @@ func OrdersAdd(w http.ResponseWriter, r *http.Request) {
 		strings.TrimSpace(req.KesepakatanBriefUang),
 		strings.TrimSpace(req.KapanUangMasuk),
 	)
+	tickets := []store.RevisionTicket{}
+	if RevisionTicketStore != nil {
+		tickets = RevisionTicketStore.CreateForOrder(item.ID, 2)
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "order": item})
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "order": item, "tickets": tickets})
+}
+
+// RevisiKlaimRequest for POST /api/revisi/klaim (public: client klaim kupon revisi).
+type RevisiKlaimRequest struct {
+	Code string `json:"code"`
+}
+
+// RevisiKlaim handles POST /api/revisi/klaim. Client kirim kode tiket → sekali pakai, tercatat.
+func RevisiKlaim(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req RevisiKlaimRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "invalid JSON"})
+		return
+	}
+	code := strings.TrimSpace(req.Code)
+	if code == "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "code required"})
+		return
+	}
+	if RevisionTicketStore == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "service unavailable"})
+		return
+	}
+	ticket, ok := RevisionTicketStore.Redeem(code)
+	if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"ok":     false,
+			"message": "Kode tidak valid atau sudah dipakai. Cek kembali kode tiket revisi Anda.",
+		})
+		return
+	}
+	remaining := 0
+	if OrderStore != nil {
+		tickets := RevisionTicketStore.ByOrderID(ticket.OrderID)
+		for _, t := range tickets {
+			if t.Status == "unused" {
+				remaining++
+			}
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"ok":            true,
+		"message":       "Tiket revisi berhasil diklaim. Tim akan memproses revisi Anda.",
+		"order_id":      ticket.OrderID,
+		"revisi_ke":     ticket.Sequence,
+		"sisa_revisi":   remaining,
+	})
 }
 
 // OrdersDelete handles DELETE /api/admin/orders?id=xxx.

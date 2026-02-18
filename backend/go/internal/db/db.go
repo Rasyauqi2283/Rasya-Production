@@ -88,6 +88,16 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 			stored_path TEXT NOT NULL,
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 		)`,
+		`CREATE TABLE IF NOT EXISTS revision_tickets (
+			id TEXT PRIMARY KEY,
+			order_id TEXT NOT NULL,
+			code TEXT NOT NULL UNIQUE,
+			sequence INT NOT NULL,
+			status TEXT NOT NULL DEFAULT 'unused',
+			used_at TIMESTAMPTZ,
+			note TEXT NOT NULL DEFAULT '',
+			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		)`,
 	}
 	for _, q := range queries {
 		if _, err := pool.Exec(ctx, q); err != nil {
