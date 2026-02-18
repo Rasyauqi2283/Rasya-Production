@@ -973,8 +973,8 @@ function AdminDonasi({ apiUrl, adminKey }: { apiUrl: string; adminKey: string })
 
   return (
     <section className="mb-12 rounded-xl border border-rasya-border bg-rasya-surface p-6">
-      <h2 className="text-lg font-semibold text-white mb-4">3. Preview Donasi & Ulasan</h2>
-      <p className="text-sm text-zinc-400 mb-4">Semua donasi (hanya kamu yang bisa lihat).</p>
+      <h2 className="text-lg font-semibold text-white mb-4">3. Preview Support & Ulasan</h2>
+      <p className="text-sm text-zinc-400 mb-4">Semua apresiasi (hanya kamu yang bisa lihat).</p>
       {loading ? (
         <p className="text-sm text-zinc-500">Memuat...</p>
       ) : (
@@ -1019,7 +1019,7 @@ function AdminDonasi({ apiUrl, adminKey }: { apiUrl: string; adminKey: string })
               </tbody>
             </table>
             {donations.length === 0 && (
-              <p className="text-sm text-zinc-500 py-4">Belum ada donasi.</p>
+              <p className="text-sm text-zinc-500 py-4">Belum ada apresiasi.</p>
             )}
           </div>
 
@@ -1048,7 +1048,7 @@ function AdminDonasi({ apiUrl, adminKey }: { apiUrl: string; adminKey: string })
               </div>
               <p className="text-xs text-zinc-500">
                 Menampilkan {start + 1}–{Math.min(start + perPage, donations.length)} dari{" "}
-                {donations.length} donasi
+                {donations.length} apresiasi
               </p>
             </div>
           )}
@@ -1056,7 +1056,7 @@ function AdminDonasi({ apiUrl, adminKey }: { apiUrl: string; adminKey: string })
           {selected && selected.comment && (
             <div className="mt-6 rounded-lg border border-rasya-border bg-rasya-dark p-4">
               <p className="mb-1 text-xs font-mono uppercase text-rasya-accent">
-                Komentar donasi
+                Komentar apresiasi
               </p>
               <p className="mb-1 text-sm text-zinc-300">
                 {selected.name || "Anonim"} • Rp {(selected.amount / 1000).toFixed(0)}k

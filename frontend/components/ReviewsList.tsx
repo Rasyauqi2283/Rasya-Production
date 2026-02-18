@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Review = {
   id: string;
@@ -27,6 +28,7 @@ function maskName(name: string) {
 }
 
 export default function ReviewsList({ apiUrl }: { apiUrl: string }) {
+  const { t } = useLanguage();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,7 +53,7 @@ export default function ReviewsList({ apiUrl }: { apiUrl: string }) {
   if (reviews.length === 0) {
     return (
       <p className="text-sm text-zinc-500">
-        Belum ada ulasan. Donasi di bawah Rp 50.000 (dengan komentar) akan tampil di sini.
+        {t("reviews_empty")}
       </p>
     );
   }
@@ -65,7 +67,7 @@ export default function ReviewsList({ apiUrl }: { apiUrl: string }) {
         >
           <p className="mb-2 text-zinc-300">{r.comment}</p>
           <p className="text-xs text-zinc-500">
-            {maskName(r.name)} · Donasi Rp {(r.amount / 1000).toFixed(0)}k · {formatDate(r.created_at)}
+            {maskName(r.name)} · {t("reviews_by")} Rp {(r.amount / 1000).toFixed(0)}k · {formatDate(r.created_at)}
           </p>
         </li>
       ))}

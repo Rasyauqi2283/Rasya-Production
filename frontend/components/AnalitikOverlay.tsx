@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 
 type ItemDesc = { id: string; en: string };
+/** Satu skill/tool dengan penjelasan (tanpa rating) — ditampilkan sebagai form/kartu */
+type SkillTool = { name: string; desc: ItemDesc };
 type AnalitikItem = {
   name: string;
   rating?: number;
   desc: ItemDesc;
-  /** Rating tools/skills untuk tampilan explain, mis. "React 4/5, VS Code, Next.js 4/5" */
-  skillsRates?: ItemDesc;
+  /** Daftar skills & tools: masing-masing punya penjelasan, tampil sebagai form seperti daftar item */
+  skillsRates?: SkillTool[];
 };
 
 const CATEGORY_IDS = ["web_digital", "design", "konten_kreatif", "lain_lain"] as const;
@@ -22,41 +24,174 @@ const CATEGORY_LABEL_KEYS: Record<(typeof CATEGORY_IDS)[number], string> = {
 
 const ANALITIK_DATA: Record<(typeof CATEGORY_IDS)[number], AnalitikItem[]> = {
   web_digital: [
-    { name: "WordPress", desc: { id: "Situs berbasis WordPress.", en: "WordPress-based sites." }, skillsRates: { id: "PHP, tema/plugin, Local by Flywheel.", en: "PHP, themes/plugins, Local." } },
-    { name: "Frontend Developer", desc: { id: "Tampilan dan interaksi di browser. Markup, styling, responsif.", en: "Browser UI and interaction. Markup, styling, responsive." }, skillsRates: { id: "React 4/5, VS Code, Next.js 4/5, Tailwind CSS, Git.", en: "React 4/5, VS Code, Next.js 4/5, Tailwind CSS, Git." } },
-    { name: "Backend Developer", desc: { id: "Server, API, dan logika aplikasi. REST API, database, auth.", en: "Server, API, and app logic. REST API, database, auth." }, skillsRates: { id: "Go 4/5, Node.js 3/5, PostgreSQL, Postman, Docker.", en: "Go 4/5, Node.js 3/5, PostgreSQL, Postman, Docker." } },
-    { name: "Fullstack Developer", desc: { id: "Frontend + backend dalam satu proyek. Dari awal sampai deploy.", en: "Frontend and backend in one project. From start to deploy." }, skillsRates: { id: "React 4/5, Next.js 4/5, Go/Node, PostgreSQL, Git, Vercel/Railway.", en: "React 4/5, Next.js 4/5, Go/Node, PostgreSQL, Git, Vercel/Railway." } },
-    { name: "Mobile App (Android)", desc: { id: "Aplikasi Android. UI, logic, integrasi API, publish ke Play Store.", en: "Android apps. UI, logic, API integration, Play Store." }, skillsRates: { id: "Android Studio, Kotlin/Java, Firebase 4/5.", en: "Android Studio, Kotlin/Java, Firebase 4/5." } },
-    { name: "Mobile App (iOS)", desc: { id: "Aplikasi iPhone/iPad. UI, logic, publish ke App Store.", en: "iPhone/iPad apps. UI, logic, App Store." }, skillsRates: { id: "Xcode, Swift/SwiftUI, Firebase 4/5.", en: "Xcode, Swift/SwiftUI, Firebase 4/5." } },
+    { name: "WordPress", desc: { id: "Situs berbasis WordPress.", en: "WordPress-based sites." }, skillsRates: [
+      { name: "PHP", desc: { id: "Bahasa pemrograman untuk tema dan plugin WordPress.", en: "Language for WordPress themes and plugins." } },
+      { name: "Tema / plugin", desc: { id: "Kustomisasi tampilan dan fitur situs.", en: "Customize site look and features." } },
+      { name: "Local by Flywheel", desc: { id: "Lingkungan development WordPress lokal.", en: "Local WordPress development environment." } },
+    ]},
+    { name: "Frontend Developer", desc: { id: "Tampilan dan interaksi di browser. Markup, styling, responsif.", en: "Browser UI and interaction. Markup, styling, responsive." }, skillsRates: [
+      { name: "React", desc: { id: "Library untuk UI berbasis komponen dan interaktif.", en: "Library for component-based, interactive UI." } },
+      { name: "VS Code", desc: { id: "Editor kode untuk menulis dan debug.", en: "Code editor for writing and debugging." } },
+      { name: "Next.js", desc: { id: "Framework React dengan SSR dan routing.", en: "React framework with SSR and routing." } },
+      { name: "Tailwind CSS", desc: { id: "Framework CSS utility-first untuk styling cepat.", en: "Utility-first CSS framework for fast styling." } },
+      { name: "Git", desc: { id: "Version control untuk kolaborasi dan riwayat kode.", en: "Version control for collaboration and code history." } },
+    ]},
+    { name: "Backend Developer", desc: { id: "Server, API, dan logika aplikasi. REST API, database, auth.", en: "Server, API, and app logic. REST API, database, auth." }, skillsRates: [
+      { name: "Go", desc: { id: "Bahasa backend untuk API dan layanan performa tinggi.", en: "Backend language for APIs and high-performance services." } },
+      { name: "Node.js", desc: { id: "Runtime JavaScript di server untuk API dan tooling.", en: "JavaScript runtime on server for APIs and tooling." } },
+      { name: "PostgreSQL", desc: { id: "Basis data relasional untuk menyimpan data aplikasi.", en: "Relational database for application data." } },
+      { name: "Postman", desc: { id: "Tool untuk uji dan dokumentasi API.", en: "Tool for testing and documenting APIs." } },
+      { name: "Docker", desc: { id: "Kontainerisasi untuk environment yang konsisten.", en: "Containerization for consistent environments." } },
+    ]},
+    { name: "Fullstack Developer", desc: { id: "Frontend + backend dalam satu proyek. Dari awal sampai deploy.", en: "Frontend and backend in one project. From start to deploy." }, skillsRates: [
+      { name: "React", desc: { id: "Library untuk UI berbasis komponen.", en: "Library for component-based UI." } },
+      { name: "Next.js", desc: { id: "Framework React dengan SSR dan deploy mudah.", en: "React framework with SSR and easy deploy." } },
+      { name: "Go / Node", desc: { id: "Backend untuk API dan logika server.", en: "Backend for API and server logic." } },
+      { name: "PostgreSQL", desc: { id: "Basis data untuk aplikasi.", en: "Database for the application." } },
+      { name: "Git", desc: { id: "Version control dan kolaborasi.", en: "Version control and collaboration." } },
+      { name: "Vercel / Railway", desc: { id: "Platform deploy untuk web app.", en: "Deploy platform for web apps." } },
+    ]},
+    { name: "Mobile App (Android)", desc: { id: "Aplikasi Android. UI, logic, integrasi API, publish ke Play Store.", en: "Android apps. UI, logic, API integration, Play Store." }, skillsRates: [
+      { name: "Android Studio", desc: { id: "IDE resmi untuk development aplikasi Android.", en: "Official IDE for Android app development." } },
+      { name: "Kotlin / Java", desc: { id: "Bahasa pemrograman untuk logic aplikasi.", en: "Programming languages for app logic." } },
+      { name: "Firebase", desc: { id: "Backend-as-a-service: auth, database, notifikasi.", en: "Backend-as-a-service: auth, database, notifications." } },
+    ]},
+    { name: "Mobile App (iOS)", desc: { id: "Aplikasi iPhone/iPad. UI, logic, publish ke App Store.", en: "iPhone/iPad apps. UI, logic, App Store." }, skillsRates: [
+      { name: "Xcode", desc: { id: "IDE resmi untuk development aplikasi iOS.", en: "Official IDE for iOS app development." } },
+      { name: "Swift / SwiftUI", desc: { id: "Bahasa dan framework UI untuk Apple.", en: "Language and UI framework for Apple." } },
+      { name: "Firebase", desc: { id: "Backend-as-a-service untuk auth dan data.", en: "Backend-as-a-service for auth and data." } },
+    ]},
   ],
   design: [
-    { name: "Figma / UI Designer", rating: 4, desc: { id: "Desain antarmuka dan prototyping.", en: "Interface design and prototyping." }, skillsRates: { id: "Figma 4/5, Adobe XD, Sketch.", en: "Figma 4/5, Adobe XD, Sketch." } },
-    { name: "UX Designer", desc: { id: "Pengalaman pengguna: riset, alur, usability.", en: "User experience: research, flows, usability." }, skillsRates: { id: "Figma 4/5, Miro, Maze/Useberry.", en: "Figma 4/5, Miro, Maze/Useberry." } },
-    { name: "Product Designer", desc: { id: "Produk digital dari ide ke eksekusi.", en: "Digital product from idea to execution." }, skillsRates: { id: "Figma 4/5, Miro, Notion, Jira.", en: "Figma 4/5, Miro, Notion, Jira." } },
-    { name: "Landing Page Designer", desc: { id: "Halaman tunggal fokus konversi.", en: "Single-page conversion focus." }, skillsRates: { id: "Figma 4/5, Framer/Webflow, React/Next.js.", en: "Figma 4/5, Framer/Webflow, React/Next.js." } },
-    { name: "Illustrator", desc: { id: "Ilustrasi orisinal.", en: "Original illustrations." }, skillsRates: { id: "Adobe Illustrator 4/5, Procreate, Affinity Designer.", en: "Adobe Illustrator 4/5, Procreate, Affinity Designer." } },
-    { name: "Motion Designer", desc: { id: "Elemen visual bergerak dan animasi.", en: "Motion and animation." }, skillsRates: { id: "After Effects 4/5, Lottie, Rive.", en: "After Effects 4/5, Lottie, Rive." } },
-    { name: "Editor / Proofreader", desc: { id: "Penyuntingan naskah, konsisten, bebas typo.", en: "Copy editing, consistency, typo-free." }, skillsRates: { id: "Google Docs, Word, Grammarly, Notion.", en: "Google Docs, Word, Grammarly, Notion." } },
+    { name: "Figma / UI Designer", rating: 4, desc: { id: "Desain antarmuka dan prototyping.", en: "Interface design and prototyping." }, skillsRates: [
+      { name: "Figma", desc: { id: "Tool utama untuk UI, prototype, dan design system.", en: "Main tool for UI, prototype, and design system." } },
+      { name: "Adobe XD", desc: { id: "Prototype dan design antarmuka.", en: "Prototyping and interface design." } },
+      { name: "Sketch", desc: { id: "Desain UI untuk Mac.", en: "UI design for Mac." } },
+    ]},
+    { name: "UX Designer", desc: { id: "Pengalaman pengguna: riset, alur, usability.", en: "User experience: research, flows, usability." }, skillsRates: [
+      { name: "Figma", desc: { id: "Wireframe dan prototype alur pengguna.", en: "Wireframes and user flow prototypes." } },
+      { name: "Miro", desc: { id: "Papan kolaborasi untuk riset dan ide.", en: "Collaboration board for research and ideas." } },
+      { name: "Maze / Useberry", desc: { id: "Testing usability dan feedback pengguna.", en: "Usability testing and user feedback." } },
+    ]},
+    { name: "Product Designer", desc: { id: "Produk digital dari ide ke eksekusi.", en: "Digital product from idea to execution." }, skillsRates: [
+      { name: "Figma", desc: { id: "Desain dan handoff ke development.", en: "Design and handoff to development." } },
+      { name: "Miro", desc: { id: "Workshop dan roadmap produk.", en: "Workshops and product roadmap." } },
+      { name: "Notion", desc: { id: "Dokumentasi dan spec produk.", en: "Product docs and specs." } },
+      { name: "Jira", desc: { id: "Tracking fitur dan sprint.", en: "Feature and sprint tracking." } },
+    ]},
+    { name: "Landing Page Designer", desc: { id: "Halaman tunggal fokus konversi.", en: "Single-page conversion focus." }, skillsRates: [
+      { name: "Figma", desc: { id: "Layout dan visual halaman.", en: "Page layout and visuals." } },
+      { name: "Framer / Webflow", desc: { id: "No-code atau low-code landing page.", en: "No-code or low-code landing pages." } },
+      { name: "React / Next.js", desc: { id: "Implementasi landing custom.", en: "Custom landing implementation." } },
+    ]},
+    { name: "Illustrator", desc: { id: "Ilustrasi orisinal.", en: "Original illustrations." }, skillsRates: [
+      { name: "Adobe Illustrator", desc: { id: "Vektor dan ilustrasi skala bebas.", en: "Vector and scalable illustration." } },
+      { name: "Procreate", desc: { id: "Ilustrasi digital di iPad.", en: "Digital illustration on iPad." } },
+      { name: "Affinity Designer", desc: { id: "Alternatif vektor cross-platform.", en: "Cross-platform vector alternative." } },
+    ]},
+    { name: "Motion Designer", desc: { id: "Elemen visual bergerak dan animasi.", en: "Motion and animation." }, skillsRates: [
+      { name: "After Effects", desc: { id: "Animasi dan motion graphics.", en: "Animation and motion graphics." } },
+      { name: "Lottie", desc: { id: "Animasi ringan untuk web dan app.", en: "Lightweight animation for web and app." } },
+      { name: "Rive", desc: { id: "Animasi interaktif untuk UI.", en: "Interactive animation for UI." } },
+    ]},
+    { name: "Editor / Proofreader", desc: { id: "Penyuntingan naskah, konsisten, bebas typo.", en: "Copy editing, consistency, typo-free." }, skillsRates: [
+      { name: "Google Docs", desc: { id: "Draft dan revisi kolaboratif.", en: "Collaborative drafting and revision." } },
+      { name: "Word", desc: { id: "Editing dan track changes.", en: "Editing and track changes." } },
+      { name: "Grammarly", desc: { id: "Tata bahasa dan gaya tulisan.", en: "Grammar and style." } },
+      { name: "Notion", desc: { id: "Dokumentasi dan style guide.", en: "Docs and style guide." } },
+    ]},
   ],
   konten_kreatif: [
-    { name: "Video Editor", rating: 3, desc: { id: "Footage jadi konten siap tayang.", en: "Footage to ready-to-publish content." }, skillsRates: { id: "Premiere Pro 3/5, DaVinci Resolve, CapCut.", en: "Premiere Pro 3/5, DaVinci Resolve, CapCut." } },
-    { name: "Content Writer", rating: 4, desc: { id: "Tulisan untuk web, blog, media.", en: "Writing for web, blog, media." }, skillsRates: { id: "Google Docs, Notion 4/5, Grammarly, Canva.", en: "Google Docs, Notion 4/5, Grammarly, Canva." } },
-    { name: "Copywriter", desc: { id: "Teks yang menjual dan mengajak aksi.", en: "Copy that sells and drives action." }, skillsRates: { id: "Google Docs, Notion, Canva.", en: "Google Docs, Notion, Canva." } },
-    { name: "Social Media Manager", desc: { id: "Konten dan interaksi di platform sosial.", en: "Content and engagement on social platforms." }, skillsRates: { id: "Canva, Buffer/Hootsuite, Meta Business Suite.", en: "Canva, Buffer/Hootsuite, Meta Business Suite." } },
-    { name: "Technical Writer", desc: { id: "Dokumentasi yang mudah dipahami.", en: "Clear documentation." }, skillsRates: { id: "Markdown, Google Docs, Confluence, Notion.", en: "Markdown, Google Docs, Confluence, Notion." } },
-    { name: "SEO Specialist", desc: { id: "Optimasi agar mudah ditemukan di mesin pencari.", en: "Optimization for search visibility." }, skillsRates: { id: "Search Console, Ahrefs/SEMrush, Google Docs.", en: "Search Console, Ahrefs/SEMrush, Google Docs." } },
-    { name: "Email Marketer", desc: { id: "Kampanye dan nurturance lewat email.", en: "Email campaigns and nurture." }, skillsRates: { id: "Mailchimp/Brevo, Google Sheets, Notion.", en: "Mailchimp/Brevo, Google Sheets, Notion." } },
-    { name: "Community Manager", desc: { id: "Interaksi dan keterlibatan komunitas brand.", en: "Community interaction and engagement." }, skillsRates: { id: "Discord, Slack, Notion, Buffer.", en: "Discord, Slack, Notion, Buffer." } },
-    { name: "Brand Strategist", desc: { id: "Posisi dan narasi brand.", en: "Brand position and narrative." }, skillsRates: { id: "Miro, Notion, Google Docs, Canva.", en: "Miro, Notion, Google Docs, Canva." } },
-    { name: "Transcriber", desc: { id: "Audio/video jadi naskah tertulis.", en: "Audio/video to written text." }, skillsRates: { id: "Otter.ai, Rev, editor teks.", en: "Otter.ai, Rev, text editor." } },
-    { name: "Localization Specialist", desc: { id: "Adaptasi konten ke bahasa dan konteks lokal.", en: "Content adaptation to local language and context." }, skillsRates: { id: "CAT tools (Crowdin, Lokalise), Google Docs.", en: "CAT tools, glossaries, Google Docs." } },
-    { name: "Photographer", desc: { id: "Foto untuk konten atau branding.", en: "Photos for content or branding." }, skillsRates: { id: "Kamera DSLR/mirrorless, Lightroom, Capture One.", en: "DSLR/mirrorless, Lightroom, Capture One." } },
-    { name: "Videographer", desc: { id: "Pengambilan footage untuk iklan atau konten.", en: "Footage capture for ads or content." }, skillsRates: { id: "Kamera, gimbal, Premiere/DaVinci.", en: "Camera, gimbal, Premiere/DaVinci." } },
+    { name: "Video Editor", rating: 3, desc: { id: "Footage jadi konten siap tayang.", en: "Footage to ready-to-publish content." }, skillsRates: [
+      { name: "Premiere Pro", desc: { id: "Editing timeline dan integrasi Adobe.", en: "Timeline editing and Adobe integration." } },
+      { name: "DaVinci Resolve", desc: { id: "Editing dan color grading profesional.", en: "Professional editing and color grading." } },
+      { name: "CapCut", desc: { id: "Editing cepat untuk konten pendek.", en: "Quick editing for short content." } },
+    ]},
+    { name: "Content Writer", rating: 4, desc: { id: "Tulisan untuk web, blog, media.", en: "Writing for web, blog, media." }, skillsRates: [
+      { name: "Google Docs", desc: { id: "Draft dan revisi kolaboratif.", en: "Collaborative drafting and revision." } },
+      { name: "Notion", desc: { id: "Outline konten dan dokumentasi.", en: "Content outline and documentation." } },
+      { name: "Grammarly", desc: { id: "Tata bahasa dan gaya tulisan.", en: "Grammar and style." } },
+      { name: "Canva", desc: { id: "Visual pendukung konten.", en: "Supporting visuals for content." } },
+    ]},
+    { name: "Copywriter", desc: { id: "Teks yang menjual dan mengajak aksi.", en: "Copy that sells and drives action." }, skillsRates: [
+      { name: "Google Docs", desc: { id: "Draft dan revisi copy.", en: "Copy drafting and revision." } },
+      { name: "Notion", desc: { id: "Brief dan outline kampanye.", en: "Briefs and campaign outlines." } },
+      { name: "Canva", desc: { id: "Aset visual untuk iklan.", en: "Visual assets for ads." } },
+    ]},
+    { name: "Social Media Manager", desc: { id: "Konten dan interaksi di platform sosial.", en: "Content and engagement on social platforms." }, skillsRates: [
+      { name: "Canva", desc: { id: "Desain grafis untuk feed dan story.", en: "Graphics for feed and story." } },
+      { name: "Buffer / Hootsuite", desc: { id: "Jadwal posting multi-platform.", en: "Multi-platform scheduling." } },
+      { name: "Meta Business Suite", desc: { id: "Jadwal dan insight Facebook & Instagram.", en: "Scheduling and insights for FB & IG." } },
+    ]},
+    { name: "Technical Writer", desc: { id: "Dokumentasi yang mudah dipahami.", en: "Clear documentation." }, skillsRates: [
+      { name: "Markdown", desc: { id: "Format penulisan dokumentasi.", en: "Documentation writing format." } },
+      { name: "Google Docs", desc: { id: "Draft dan review kolaboratif.", en: "Collaborative draft and review." } },
+      { name: "Confluence", desc: { id: "Wiki dan dokumentasi tim.", en: "Team wiki and documentation." } },
+      { name: "Notion", desc: { id: "Dokumentasi terstruktur.", en: "Structured documentation." } },
+    ]},
+    { name: "SEO Specialist", desc: { id: "Optimasi agar mudah ditemukan di mesin pencari.", en: "Optimization for search visibility." }, skillsRates: [
+      { name: "Search Console", desc: { id: "Monitor performa pencarian.", en: "Monitor search performance." } },
+      { name: "Ahrefs / SEMrush", desc: { id: "Riset keyword dan kompetitor.", en: "Keyword and competitor research." } },
+      { name: "Google Docs", desc: { id: "Konten dan brief artikel.", en: "Content and article briefs." } },
+    ]},
+    { name: "Email Marketer", desc: { id: "Kampanye dan nurturance lewat email.", en: "Email campaigns and nurture." }, skillsRates: [
+      { name: "Mailchimp / Brevo", desc: { id: "Kampanye email dan automasi.", en: "Email campaigns and automation." } },
+      { name: "Google Sheets", desc: { id: "Data list dan segmentasi.", en: "List data and segmentation." } },
+      { name: "Notion", desc: { id: "Strategi dan kalender kampanye.", en: "Strategy and campaign calendar." } },
+    ]},
+    { name: "Community Manager", desc: { id: "Interaksi dan keterlibatan komunitas brand.", en: "Community interaction and engagement." }, skillsRates: [
+      { name: "Discord", desc: { id: "Komunitas berbasis server.", en: "Server-based community." } },
+      { name: "Slack", desc: { id: "Komunikasi tim dan channel.", en: "Team and channel communication." } },
+      { name: "Notion", desc: { id: "Wiki dan sumber daya komunitas.", en: "Wiki and community resources." } },
+      { name: "Buffer", desc: { id: "Jadwal konten sosial.", en: "Social content scheduling." } },
+    ]},
+    { name: "Brand Strategist", desc: { id: "Posisi dan narasi brand.", en: "Brand position and narrative." }, skillsRates: [
+      { name: "Miro", desc: { id: "Workshop dan peta posisi brand.", en: "Workshops and brand positioning maps." } },
+      { name: "Notion", desc: { id: "Strategi dan dokumentasi brand.", en: "Strategy and brand documentation." } },
+      { name: "Google Docs", desc: { id: "Brief dan narasi.", en: "Briefs and narrative." } },
+      { name: "Canva", desc: { id: "Moodboard dan presentasi.", en: "Moodboards and presentations." } },
+    ]},
+    { name: "Transcriber", desc: { id: "Audio/video jadi naskah tertulis.", en: "Audio/video to written text." }, skillsRates: [
+      { name: "Otter.ai", desc: { id: "Transkripsi otomatis dari audio.", en: "Automatic transcription from audio." } },
+      { name: "Rev", desc: { id: "Transkripsi manusia untuk akurasi.", en: "Human transcription for accuracy." } },
+      { name: "Editor teks", desc: { id: "Penyuntingan dan format naskah.", en: "Editing and formatting transcript." } },
+    ]},
+    { name: "Localization Specialist", desc: { id: "Adaptasi konten ke bahasa dan konteks lokal.", en: "Content adaptation to local language and context." }, skillsRates: [
+      { name: "CAT tools (Crowdin, Lokalise)", desc: { id: "Terjemahan dan glossary konsisten.", en: "Translation and consistent glossaries." } },
+      { name: "Google Docs", desc: { id: "Review dan konteks konten.", en: "Review and content context." } },
+    ]},
+    { name: "Photographer", desc: { id: "Foto untuk konten atau branding.", en: "Photos for content or branding." }, skillsRates: [
+      { name: "Kamera DSLR / mirrorless", desc: { id: "Pengambilan gambar berkualitas.", en: "High-quality image capture." } },
+      { name: "Lightroom", desc: { id: "Edit dan katalog foto.", en: "Photo editing and catalog." } },
+      { name: "Capture One", desc: { id: "Editing RAW dan tethered.", en: "RAW editing and tethered shooting." } },
+    ]},
+    { name: "Videographer", desc: { id: "Pengambilan footage untuk iklan atau konten.", en: "Footage capture for ads or content." }, skillsRates: [
+      { name: "Kamera", desc: { id: "Pengambilan video di lapangan.", en: "On-location video capture." } },
+      { name: "Gimbal", desc: { id: "Stabilisasi gambar bergerak.", en: "Stabilization for moving shots." } },
+      { name: "Premiere / DaVinci", desc: { id: "Editing pasca produksi.", en: "Post-production editing." } },
+    ]},
   ],
   lain_lain: [
-    { name: "Data Analyst", desc: { id: "Pengolahan dan penyajian data untuk keputusan bisnis.", en: "Data processing and presentation for business decisions." }, skillsRates: { id: "Google Sheets, Excel, SQL 4/5, Python (pandas), Looker/Tableau.", en: "Google Sheets, Excel, SQL 4/5, Python, Looker/Tableau." } },
-    { name: "Project Manager Digital", desc: { id: "Koordinasi proyek digital dari planning ke delivery.", en: "Digital project coordination from planning to delivery." }, skillsRates: { id: "Jira, Trello, Notion 4/5, Google Calendar, Slack.", en: "Jira, Trello, Notion 4/5, Google Calendar, Slack." } },
-    { name: "Virtual Assistant", desc: { id: "Dukungan administratif dan operasional daring.", en: "Remote admin and operations support." }, skillsRates: { id: "Google Workspace, Calendly, Notion, Slack.", en: "Google Workspace, Calendly, Notion, Slack." } },
+    { name: "Data Analyst", desc: { id: "Pengolahan dan penyajian data untuk keputusan bisnis.", en: "Data processing and presentation for business decisions." }, skillsRates: [
+      { name: "Google Sheets", desc: { id: "Spreadsheet dan analisis dasar.", en: "Spreadsheets and basic analysis." } },
+      { name: "Excel", desc: { id: "Analisis data dan pivot.", en: "Data analysis and pivots." } },
+      { name: "SQL", desc: { id: "Query dan ekstraksi data dari database.", en: "Query and data extraction from databases." } },
+      { name: "Python (pandas)", desc: { id: "Pengolahan dan analisis data.", en: "Data processing and analysis." } },
+      { name: "Looker / Tableau", desc: { id: "Visualisasi dan dashboard data.", en: "Data visualization and dashboards." } },
+    ]},
+    { name: "Project Manager Digital", desc: { id: "Koordinasi proyek digital dari planning ke delivery.", en: "Digital project coordination from planning to delivery." }, skillsRates: [
+      { name: "Jira", desc: { id: "Issue tracking dan sprint.", en: "Issue tracking and sprints." } },
+      { name: "Trello", desc: { id: "Board dan kartu task.", en: "Board and task cards." } },
+      { name: "Notion", desc: { id: "Wiki, roadmap, dan dokumentasi.", en: "Wiki, roadmap, and documentation." } },
+      { name: "Google Calendar", desc: { id: "Jadwal dan meeting.", en: "Scheduling and meetings." } },
+      { name: "Slack", desc: { id: "Komunikasi tim dan integrasi.", en: "Team communication and integrations." } },
+    ]},
+    { name: "Virtual Assistant", desc: { id: "Dukungan administratif dan operasional daring.", en: "Remote admin and operations support." }, skillsRates: [
+      { name: "Google Workspace", desc: { id: "Email, dokumen, dan drive.", en: "Email, docs, and drive." } },
+      { name: "Calendly", desc: { id: "Penjadwalan janji temu.", en: "Appointment scheduling." } },
+      { name: "Notion", desc: { id: "Task dan dokumentasi.", en: "Tasks and documentation." } },
+      { name: "Slack", desc: { id: "Komunikasi dan koordinasi.", en: "Communication and coordination." } },
+    ]},
   ],
 };
 
@@ -213,14 +348,24 @@ export default function AnalitikOverlay({ open, onClose }: Props) {
           {/* Step 3: Explain — judul + skillsRates (rating tools) + desc */}
           {step === "explain" && selectedItem && (
             <div className="space-y-4">
-              {selectedItem.skillsRates && (
-                <div className="rounded-lg border border-rasya-accent/30 bg-rasya-accent/10 px-4 py-3">
-                  <p className="text-xs font-medium uppercase tracking-wider text-rasya-accent">
+              {selectedItem.skillsRates && selectedItem.skillsRates.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wider text-rasya-accent mb-3">
                     {isEn ? "Skills & tools" : "Skills & tools"}
                   </p>
-                  <p className="mt-1 text-sm text-zinc-200">
-                    {isEn ? selectedItem.skillsRates.en : selectedItem.skillsRates.id}
-                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedItem.skillsRates.map((skill, idx) => (
+                      <div
+                        key={idx}
+                        className="rounded-lg border border-rasya-border bg-rasya-dark/60 px-3 py-2 text-left"
+                      >
+                        <p className="text-sm font-medium text-zinc-200">{skill.name}</p>
+                        <p className="mt-0.5 text-xs text-zinc-400 leading-snug">
+                          {isEn ? skill.desc.en : skill.desc.id}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               <p className="text-sm text-zinc-400 leading-relaxed">

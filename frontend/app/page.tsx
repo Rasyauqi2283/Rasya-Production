@@ -4,7 +4,6 @@ import { useState } from "react";
 import AntrianLayanan from "@/components/AntrianLayanan";
 import AnalitikOverlay from "@/components/AnalitikOverlay";
 import CaraKerjaOverlay from "@/components/CaraKerjaOverlay";
-import DonateForm from "@/components/DonateForm";
 import JasaLanes from "@/components/JasaLanes";
 import LayananPreviewCard from "@/components/LayananPreviewCard";
 import LayananSection from "@/components/LayananSection";
@@ -234,10 +233,15 @@ export default function Home() {
               rasyauqi2283@gmail.com
             </a>
           </div>
-          <div>
-            <h4 className="mb-4 text-lg font-semibold text-white">{t("contact_donate")}</h4>
-            <DonateForm apiUrl={API_URL} />
-          </div>
+          <footer className="mt-12 border-t border-rasya-border pt-6 text-center">
+            <p className="mb-3 text-sm text-zinc-500">{t("contact_support_intro")}</p>
+            <a
+              href="/support"
+              className="text-sm font-medium text-rasya-accent hover:underline"
+            >
+              {t("contact_support_link")}
+            </a>
+          </footer>
         </div>
       </section>
     </>

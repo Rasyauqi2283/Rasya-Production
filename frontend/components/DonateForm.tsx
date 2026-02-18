@@ -144,9 +144,6 @@ export default function DonateForm({ apiUrl }: { apiUrl: string }) {
       <div className="rounded-xl border border-rasya-accent/30 bg-rasya-card p-6 text-left">
         <p className="mb-4 text-rasya-accent">{t("donate_thanks")}</p>
         <p className="mb-4 text-zinc-300">{success.message}</p>
-        {success.highlighted && (
-          <p className="mt-4 text-sm text-rasya-accent">{t("donate_priority")}</p>
-        )}
         <button
           type="button"
           onClick={() => setSuccess(null)}
