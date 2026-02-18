@@ -56,6 +56,7 @@ func OrdersListAll(w http.ResponseWriter, r *http.Request) {
 // OrderAddRequest for POST /api/admin/orders.
 type OrderAddRequest struct {
 	Layanan              string `json:"layanan"`
+	Pemesan              string `json:"pemesan"`
 	DeskripsiPekerjaan   string `json:"deskripsi_pekerjaan"`
 	Deadline             string `json:"deadline"`
 	MulaiTanggal         string `json:"mulai_tanggal"`
@@ -87,6 +88,7 @@ func OrdersAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	item := OrderStore.Add(
 		layanan,
+		strings.TrimSpace(req.Pemesan),
 		strings.TrimSpace(req.DeskripsiPekerjaan),
 		strings.TrimSpace(req.Deadline),
 		strings.TrimSpace(req.MulaiTanggal),

@@ -12,6 +12,7 @@ import (
 type OrderItem struct {
 	ID                   string    `json:"id"`
 	Layanan              string    `json:"layanan"`               // nama layanan (e.g. UI Designer)
+	Pemesan              string    `json:"pemesan"`               // siapa yang order
 	DeskripsiPekerjaan   string    `json:"deskripsi_pekerjaan"`   // apa yang akan dikerjakan
 	Deadline             string    `json:"deadline"`              // deadline (YYYY-MM-DD atau teks)
 	MulaiTanggal         string    `json:"mulai_tanggal"`          // mulai tanggal
@@ -38,15 +39,16 @@ func NewOrderStoreFromDB(pool *pgxpool.Pool) *OrderStore {
 }
 
 // Add appends an order.
-func (o *OrderStore) Add(layanan, deskripsi, deadline, mulai, kesepakatan, uangMasuk string) OrderItem {
+func (o *OrderStore) Add(layanan, pemesan, deskripsi, deadline, mulai, kesepakatan, uangMasuk string) OrderItem {
 	if o.pool != nil {
-		return o.addDB(layanan, deskripsi, deadline, mulai, kesepakatan, uangMasuk)
+		return o.addDB(layanan, pemesan, deskripsi, deadline, mulai, kesepakatan, uangMasuk)
 	}
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	item := OrderItem{
 		ID:                   generateID(),
 		Layanan:              layanan,
+		Pemesan:              pemesan,
 		DeskripsiPekerjaan:   deskripsi,
 		Deadline:             deadline,
 		MulaiTanggal:         mulai,
@@ -58,10 +60,11 @@ func (o *OrderStore) Add(layanan, deskripsi, deadline, mulai, kesepakatan, uangM
 	return item
 }
 
-func (o *OrderStore) addDB(layanan, deskripsi, deadline, mulai, kesepakatan, uangMasuk string) OrderItem {
+func (o *OrderStore) addDB(layanan, pemesan, deskripsi, deadline, mulai, kesepakatan, uangMasuk string) OrderItem {
 	item := OrderItem{
 		ID:                   generateID(),
 		Layanan:              layanan,
+		Pemesan:              pemesan,
 		DeskripsiPekerjaan:   deskripsi,
 		Deadline:             deadline,
 		MulaiTanggal:         mulai,
@@ -70,9 +73,9 @@ func (o *OrderStore) addDB(layanan, deskripsi, deadline, mulai, kesepakatan, uan
 		CreatedAt:            time.Now().UTC(),
 	}
 	ctx := context.Background()
-	_, err := o.pool.Exec(ctx, `INSERT INTO orders (id, layanan, deskripsi_pekerjaan, deadline, mulai_tanggal, kesepakatan_brief_uang, kapan_uang_masuk, created_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-		item.ID, item.Layanan, item.DeskripsiPekerjaan, item.Deadline, item.MulaiTanggal, item.KesepakatanBriefUang, item.KapanUangMasuk, item.CreatedAt)
+	_, err := o.pool.Exec(ctx, `INSERT INTO orders (id, layanan, pemesan, deskripsi_pekerjaan, deadline, mulai_tanggal, kesepakatan_brief_uang, kapan_uang_masuk, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+		item.ID, item.Layanan, item.Pemesan, item.DeskripsiPekerjaan, item.Deadline, item.MulaiTanggal, item.KesepakatanBriefUang, item.KapanUangMasuk, item.CreatedAt)
 	if err != nil {
 		return OrderItem{}
 	}
@@ -96,7 +99,7 @@ func (o *OrderStore) List() []OrderItem {
 
 func (o *OrderStore) listDB() []OrderItem {
 	ctx := context.Background()
-	rows, err := o.pool.Query(ctx, `SELECT id, layanan, deskripsi_pekerjaan, deadline, mulai_tanggal, kesepakatan_brief_uang, kapan_uang_masuk, created_at FROM orders ORDER BY created_at DESC`)
+	rows, err := o.pool.Query(ctx, `SELECT id, layanan, pemesan, deskripsi_pekerjaan, deadline, mulai_tanggal, kesepakatan_brief_uang, kapan_uang_masuk, created_at FROM orders ORDER BY created_at DESC`)
 	if err != nil {
 		return nil
 	}
@@ -104,7 +107,7 @@ func (o *OrderStore) listDB() []OrderItem {
 	var out []OrderItem
 	for rows.Next() {
 		var item OrderItem
-		if err := rows.Scan(&item.ID, &item.Layanan, &item.DeskripsiPekerjaan, &item.Deadline, &item.MulaiTanggal, &item.KesepakatanBriefUang, &item.KapanUangMasuk, &item.CreatedAt); err != nil {
+		if err := rows.Scan(&item.ID, &item.Layanan, &item.Pemesan, &item.DeskripsiPekerjaan, &item.Deadline, &item.MulaiTanggal, &item.KesepakatanBriefUang, &item.KapanUangMasuk, &item.CreatedAt); err != nil {
 			return out
 		}
 		out = append(out, item)

@@ -58,11 +58,13 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 			image_url TEXT NOT NULL DEFAULT '',
 			link_url TEXT NOT NULL DEFAULT '',
 			layanan JSONB NOT NULL DEFAULT '[]',
+			closed BOOLEAN NOT NULL DEFAULT false,
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 		)`,
 		`CREATE TABLE IF NOT EXISTS orders (
 			id TEXT PRIMARY KEY,
 			layanan TEXT NOT NULL,
+			pemesan TEXT NOT NULL DEFAULT '',
 			deskripsi_pekerjaan TEXT NOT NULL DEFAULT '',
 			deadline TEXT NOT NULL DEFAULT '',
 			mulai_tanggal TEXT NOT NULL DEFAULT '',
@@ -70,6 +72,8 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 			kapan_uang_masuk TEXT NOT NULL DEFAULT '',
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 		)`,
+		`ALTER TABLE porto ADD COLUMN IF NOT EXISTS closed BOOLEAN NOT NULL DEFAULT false`,
+		`ALTER TABLE orders ADD COLUMN IF NOT EXISTS pemesan TEXT NOT NULL DEFAULT ''`,
 		`CREATE TABLE IF NOT EXISTS taper_otps (
 			code TEXT PRIMARY KEY,
 			label TEXT NOT NULL DEFAULT '',

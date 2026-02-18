@@ -19,6 +19,7 @@ type PortoItem struct {
 	ImageURL    string    `json:"image_url"` // relative path or full URL
 	LinkURL     string    `json:"link_url"`  // URL website/laman (klik card = buka link)
 	Layanan     []string  `json:"layanan"`   // layanan jasa (multiple)
+	Closed      bool      `json:"closed"`    // true = disembunyikan dari halaman utama
 	CreatedAt   time.Time `json:"created_at"`
 }
 
@@ -57,6 +58,7 @@ func (p *PortoStore) Add(title, tag, desc, imageURL, linkURL string, layanan []s
 		ImageURL:    imageURL,
 		LinkURL:     strings.TrimSpace(linkURL),
 		Layanan:     layanan,
+		Closed:      false,
 		CreatedAt:   time.Now().UTC(),
 	}
 	p.items = append(p.items, item)
@@ -72,23 +74,43 @@ func (p *PortoStore) addDB(title, tag, desc, imageURL, linkURL string, layanan [
 		ImageURL:    imageURL,
 		LinkURL:     linkURL,
 		Layanan:     layanan,
+		Closed:      false,
 		CreatedAt:   time.Now().UTC(),
 	}
 	jb, _ := json.Marshal(item.Layanan)
 	ctx := context.Background()
-	_, err := p.pool.Exec(ctx, `INSERT INTO porto (id, title, tag, description, image_url, link_url, layanan, created_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-		item.ID, item.Title, item.Tag, item.Description, item.ImageURL, item.LinkURL, jb, item.CreatedAt)
+	_, err := p.pool.Exec(ctx, `INSERT INTO porto (id, title, tag, description, image_url, link_url, layanan, closed, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+		item.ID, item.Title, item.Tag, item.Description, item.ImageURL, item.LinkURL, jb, item.Closed, item.CreatedAt)
 	if err != nil {
 		return PortoItem{}
 	}
 	return item
 }
 
-// List returns all porto items (newest first).
+// List returns only open porto items (newest first) for public pages.
 func (p *PortoStore) List() []PortoItem {
 	if p.pool != nil {
-		return p.listDB()
+		return p.listDB(false)
+	}
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	var out []PortoItem
+	for _, item := range p.items {
+		if !item.Closed {
+			out = append(out, item)
+		}
+	}
+	for i, j := 0, len(out)-1; i < j; i, j = i+1, j-1 {
+		out[i], out[j] = out[j], out[i]
+	}
+	return out
+}
+
+// ListAll returns all porto items (including closed) for admin.
+func (p *PortoStore) ListAll() []PortoItem {
+	if p.pool != nil {
+		return p.listDB(true)
 	}
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -100,9 +122,13 @@ func (p *PortoStore) List() []PortoItem {
 	return out
 }
 
-func (p *PortoStore) listDB() []PortoItem {
+func (p *PortoStore) listDB(all bool) []PortoItem {
 	ctx := context.Background()
-	rows, err := p.pool.Query(ctx, `SELECT id, title, tag, description, image_url, link_url, layanan, created_at FROM porto ORDER BY created_at DESC`)
+	q := `SELECT id, title, tag, description, image_url, link_url, layanan, closed, created_at FROM porto ORDER BY created_at DESC`
+	if !all {
+		q = `SELECT id, title, tag, description, image_url, link_url, layanan, closed, created_at FROM porto WHERE closed = false ORDER BY created_at DESC`
+	}
+	rows, err := p.pool.Query(ctx, q)
 	if err != nil {
 		return nil
 	}
@@ -111,7 +137,7 @@ func (p *PortoStore) listDB() []PortoItem {
 	for rows.Next() {
 		var item PortoItem
 		var layananJSON []byte
-		if err := rows.Scan(&item.ID, &item.Title, &item.Tag, &item.Description, &item.ImageURL, &item.LinkURL, &layananJSON, &item.CreatedAt); err != nil {
+		if err := rows.Scan(&item.ID, &item.Title, &item.Tag, &item.Description, &item.ImageURL, &item.LinkURL, &layananJSON, &item.Closed, &item.CreatedAt); err != nil {
 			return out
 		}
 		_ = json.Unmarshal(layananJSON, &item.Layanan)
@@ -180,6 +206,7 @@ func (p *PortoStore) SeedIfEmpty() {
 			ImageURL:    s.imageURL,
 			LinkURL:     s.linkURL,
 			Layanan:     s.layanan,
+			Closed:      false,
 			CreatedAt:   time.Now().UTC(),
 		}
 		p.items = append(p.items, item)
@@ -238,13 +265,35 @@ func (p *PortoStore) seedIfEmptyDB() {
 			ImageURL:    s.imageURL,
 			LinkURL:     s.linkURL,
 			Layanan:     s.layanan,
+			Closed:      false,
 			CreatedAt:   time.Now().UTC(),
 		}
 		jb, _ := json.Marshal(item.Layanan)
-		_, _ = p.pool.Exec(ctx, `INSERT INTO porto (id, title, tag, description, image_url, link_url, layanan, created_at)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-			item.ID, item.Title, item.Tag, item.Description, item.ImageURL, item.LinkURL, jb, item.CreatedAt)
+		_, _ = p.pool.Exec(ctx, `INSERT INTO porto (id, title, tag, description, image_url, link_url, layanan, closed, created_at)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+			item.ID, item.Title, item.Tag, item.Description, item.ImageURL, item.LinkURL, jb, item.Closed, item.CreatedAt)
 	}
+}
+
+// SetClosed sets visibility of a porto item; true = hide on public pages.
+func (p *PortoStore) SetClosed(id string, closed bool) bool {
+	if p.pool != nil {
+		ctx := context.Background()
+		ct, err := p.pool.Exec(ctx, `UPDATE porto SET closed = $2 WHERE id = $1`, id, closed)
+		if err != nil {
+			return false
+		}
+		return ct.RowsAffected() > 0
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for i := range p.items {
+		if p.items[i].ID == id {
+			p.items[i].Closed = closed
+			return true
+		}
+	}
+	return false
 }
 
 // Delete removes a porto item by ID.

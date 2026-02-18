@@ -54,6 +54,22 @@ func PortoList(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "porto": list})
 }
 
+// PortoListAdmin handles GET /api/admin/porto (includes closed items).
+func PortoListAdmin(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if PortoStore == nil {
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "porto": []store.PortoItem{}})
+		return
+	}
+	list := PortoStore.ListAll()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "porto": list})
+}
+
 // PortoAdd handles POST /api/admin/porto (multipart: title, tag, description, image).
 func PortoAdd(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -145,6 +161,43 @@ func PortoDelete(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true})
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "not found"})
+	}
+}
+
+type PortoSetClosedRequest struct {
+	ID     string `json:"id"`
+	Closed bool   `json:"closed"`
+}
+
+// PortoSetClosed handles POST /api/admin/porto/close.
+func PortoSetClosed(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req PortoSetClosedRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"ok":false,"message":"invalid JSON"}`, http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(req.ID) == "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "id required"})
+		return
+	}
+	if PortoStore == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	ok := PortoStore.SetClosed(strings.TrimSpace(req.ID), req.Closed)
+	w.Header().Set("Content-Type", "application/json")
+	if ok {
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "closed": req.Closed})
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": "not found"})

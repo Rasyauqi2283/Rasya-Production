@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AntrianLayanan from "@/components/AntrianLayanan";
 import AnalitikOverlay from "@/components/AnalitikOverlay";
 import CaraKerjaOverlay from "@/components/CaraKerjaOverlay";
@@ -20,8 +20,23 @@ export default function Home() {
   const { lang, t } = useLanguage();
   const [caraKerjaOpen, setCaraKerjaOpen] = useState(false);
   const [analitikOpen, setAnalitikOpen] = useState(false);
+  const [showPortoSection, setShowPortoSection] = useState(false);
   const whatsappPrefill = lang === "en" ? WHATSAPP_PREFILL_EN : WHATSAPP_PREFILL_ID;
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappPrefill)}`;
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/porto`)
+      .then((res) => res.text())
+      .then((text) => {
+        try {
+          const data = text ? JSON.parse(text) : {};
+          setShowPortoSection(Boolean(data?.ok && Array.isArray(data.porto) && data.porto.length > 0));
+        } catch {
+          setShowPortoSection(false);
+        }
+      })
+      .catch(() => setShowPortoSection(false));
+  }, []);
 
   return (
     <>
@@ -138,25 +153,27 @@ export default function Home() {
       <CaraKerjaOverlay open={caraKerjaOpen} onClose={() => setCaraKerjaOpen(false)} />
       <AnalitikOverlay open={analitikOpen} onClose={() => setAnalitikOpen(false)} />
 
-      <section
-        id="porto"
-        className="border-t border-rasya-border bg-rasya-surface py-24 px-6"
-        aria-labelledby="porto-heading"
-      >
-        <div className="mx-auto max-w-6xl">
-          <h2
-            id="porto-heading"
-            className="mb-4 font-mono text-sm uppercase tracking-widest text-rasya-accent"
-          >
-            {t("porto_heading")}
-          </h2>
-          <h3 className="mb-12 text-3xl font-bold text-white sm:text-4xl">
-            {t("porto_title")}
-          </h3>
-          <p className="mb-12 max-w-2xl text-zinc-400">{t("porto_desc")}</p>
-          <PortoList apiUrl={API_URL} />
-        </div>
-      </section>
+      {showPortoSection && (
+        <section
+          id="porto"
+          className="border-t border-rasya-border bg-rasya-surface py-24 px-6"
+          aria-labelledby="porto-heading"
+        >
+          <div className="mx-auto max-w-6xl">
+            <h2
+              id="porto-heading"
+              className="mb-4 font-mono text-sm uppercase tracking-widest text-rasya-accent"
+            >
+              {t("porto_heading")}
+            </h2>
+            <h3 className="mb-12 text-3xl font-bold text-white sm:text-4xl">
+              {t("porto_title")}
+            </h3>
+            <p className="mb-12 max-w-2xl text-zinc-400">{t("porto_desc")}</p>
+            <PortoList apiUrl={API_URL} />
+          </div>
+        </section>
+      )}
 
       <section
         id="contact"

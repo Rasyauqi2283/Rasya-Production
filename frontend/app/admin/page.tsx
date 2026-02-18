@@ -59,6 +59,46 @@ function formatDateWIB(input: string): string {
     hour12: false,
   });
 }
+
+function formatDateDDMMYYYY(input: string): string {
+  const raw = input.trim();
+  if (!raw) return "-";
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+}
+
+function parseDeadlineDate(input: string): Date | null {
+  const raw = input.trim();
+  if (!raw) return null;
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) {
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 23, 59, 59, 999);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function formatCountdown(deadlineRaw: string, nowMs: number): string {
+  const d = parseDeadlineDate(deadlineRaw);
+  if (!d) return "-";
+  let diff = d.getTime() - nowMs;
+  const passed = diff < 0;
+  diff = Math.abs(diff);
+  const totalSeconds = Math.floor(diff / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const core = `${days} hari ${hours} jam ${minutes} menit ${seconds} detik`;
+  return passed ? `Lewat ${core}` : `Sisa ${core}`;
+}
 type Service = {
   id: string;
   title: string;
@@ -81,6 +121,7 @@ type Donation = {
 type OrderItem = {
   id: string;
   layanan: string;
+  pemesan: string;
   deskripsi_pekerjaan: string;
   deadline: string;
   mulai_tanggal: string;
@@ -96,6 +137,7 @@ type PortoItem = {
   image_url: string;
   link_url?: string;
   layanan?: string[];
+  closed?: boolean;
   created_at: string;
 };
 
@@ -740,12 +782,14 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [layanan, setLayanan] = useState("");
+  const [pemesan, setPemesan] = useState("");
   const [deskripsiPekerjaan, setDeskripsiPekerjaan] = useState("");
   const [deadline, setDeadline] = useState("");
   const [mulaiTanggal, setMulaiTanggal] = useState("");
   const [kesepakatanUang, setKesepakatanUang] = useState("");
   const [kapanUangMasuk, setKapanUangMasuk] = useState("");
   const [loading, setLoading] = useState(false);
+  const [nowMs, setNowMs] = useState(Date.now());
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -774,6 +818,11 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
     fetchServices();
   }, [fetchOrders, fetchServices]);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const add = async () => {
     if (!layanan.trim()) return;
     setLoading(true);
@@ -783,6 +832,7 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
         headers: headers(adminKey),
         body: JSON.stringify({
           layanan: layanan.trim(),
+          pemesan: pemesan.trim(),
           deskripsi_pekerjaan: deskripsiPekerjaan.trim(),
           deadline: deadline.trim(),
           mulai_tanggal: mulaiTanggal.trim(),
@@ -792,6 +842,7 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
       });
       if (res.ok) {
         setLayanan("");
+        setPemesan("");
         setDeskripsiPekerjaan("");
         setDeadline("");
         setMulaiTanggal("");
@@ -813,10 +864,13 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
     if (res.ok) fetchOrders();
   };
 
-  const byLayanan = orders.reduce<Map<string, OrderItem[]>>((acc, o) => {
-    const t = o.layanan.trim() || "(Tanpa layanan)";
-    if (!acc.has(t)) acc.set(t, []);
-    acc.get(t)!.push(o);
+  const byPemesan = orders.reduce<Map<string, Map<string, OrderItem[]>>>((acc, o) => {
+    const pemesanKey = o.pemesan?.trim() || "(Tanpa nama pemesan)";
+    const layananKey = o.layanan.trim() || "(Tanpa layanan)";
+    if (!acc.has(pemesanKey)) acc.set(pemesanKey, new Map());
+    const layananMap = acc.get(pemesanKey)!;
+    if (!layananMap.has(layananKey)) layananMap.set(layananKey, []);
+    layananMap.get(layananKey)!.push(o);
     return acc;
   }, new Map());
 
@@ -824,9 +878,19 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
     <section className="mb-12 rounded-xl border border-rasya-border bg-rasya-surface p-6">
       <h2 className="text-lg font-semibold text-white mb-4">2. Order Layanan</h2>
       <p className="text-sm text-zinc-400 mb-4">
-        Teknis order: apa yang dikerjakan, deadline, mulai, kesepakatan brief (uang), kapan uang masuk. Tampil di antrian halaman utama (hanya nama layanan).
+        Teknis order: siapa pemesan, apa yang dikerjakan, deadline, mulai, kesepakatan brief (uang), kapan uang masuk. Data dikelompokkan per pemesan agar rapi seperti folder kerja.
       </p>
       <div className="grid gap-3 sm:grid-cols-2 mb-6">
+        <div>
+          <label className="block text-xs text-zinc-500 mb-1">Siapa yang order (pemesan)</label>
+          <input
+            type="text"
+            value={pemesan}
+            onChange={(e) => setPemesan(e.target.value)}
+            placeholder="Contoh: PT Maju Jaya / Nama client"
+            className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white placeholder-zinc-500 focus:border-rasya-accent focus:outline-none"
+          />
+        </div>
         <div>
           <label className="block text-xs text-zinc-500 mb-1">Layanan</label>
           <select
@@ -841,22 +905,20 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
           </select>
         </div>
         <div>
-          <label className="block text-xs text-zinc-500 mb-1">Deadline</label>
+          <label className="block text-xs text-zinc-500 mb-1">Deadline (DD-MM-YYYY)</label>
           <input
-            type="text"
+            type="date"
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
-            placeholder="YYYY-MM-DD atau teks"
             className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white placeholder-zinc-500 focus:border-rasya-accent focus:outline-none"
           />
         </div>
         <div>
-          <label className="block text-xs text-zinc-500 mb-1">Mulai tanggal</label>
+          <label className="block text-xs text-zinc-500 mb-1">Mulai tanggal (DD-MM-YYYY)</label>
           <input
-            type="text"
+            type="date"
             value={mulaiTanggal}
             onChange={(e) => setMulaiTanggal(e.target.value)}
-            placeholder="YYYY-MM-DD atau teks"
             className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white placeholder-zinc-500 focus:border-rasya-accent focus:outline-none"
           />
         </div>
@@ -871,12 +933,11 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
           />
         </div>
         <div>
-          <label className="block text-xs text-zinc-500 mb-1">Kapan uang masuk</label>
+          <label className="block text-xs text-zinc-500 mb-1">Kapan uang masuk (DD-MM-YYYY)</label>
           <input
-            type="text"
+            type="date"
             value={kapanUangMasuk}
             onChange={(e) => setKapanUangMasuk(e.target.value)}
-            placeholder="Tanggal atau &quot;belum&quot;"
             className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white placeholder-zinc-500 focus:border-rasya-accent focus:outline-none"
           />
         </div>
@@ -905,30 +966,42 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
         <p className="text-sm text-zinc-500">Belum ada order. Tambah dari form di atas.</p>
       ) : (
         <div className="space-y-6">
-          {Array.from(byLayanan.entries()).map(([namaLayanan, items]) => (
-            <div key={namaLayanan} className="rounded-lg border border-rasya-border bg-rasya-dark/30 overflow-hidden">
+          {Array.from(byPemesan.entries()).map(([namaPemesan, layananMap]) => (
+            <div key={namaPemesan} className="rounded-lg border border-rasya-border bg-rasya-dark/30 overflow-hidden">
               <div className="px-4 py-2 border-b border-rasya-border font-mono text-sm font-medium text-rasya-accent">
-                {namaLayanan}
+                {namaPemesan}
               </div>
-              <ul className="divide-y divide-rasya-border/50">
-                {items.map((o) => (
-                  <li key={o.id} className="flex justify-between gap-4 p-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-zinc-300">{o.deskripsi_pekerjaan || "—"}</p>
-                      <p className="text-xs text-zinc-500 mt-1">
-                        Deadline: {o.deadline || "—"} · Mulai: {o.mulai_tanggal || "—"} · Uang: {o.kesepakatan_brief_uang || "—"} · Masuk: {o.kapan_uang_masuk || "—"}
-                      </p>
+              <div className="space-y-3 p-3">
+                {Array.from(layananMap.entries()).map(([namaLayanan, items]) => (
+                  <div key={`${namaPemesan}-${namaLayanan}`} className="rounded-lg border border-rasya-border/60 bg-rasya-dark/40 overflow-hidden">
+                    <div className="px-3 py-2 border-b border-rasya-border/60 text-xs font-semibold uppercase tracking-wider text-zinc-300">
+                      {namaLayanan}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => del(o.id)}
-                      className="text-sm text-red-400 hover:text-red-300 shrink-0"
-                    >
-                      Hapus
-                    </button>
-                  </li>
+                    <ul className="divide-y divide-rasya-border/40">
+                      {items.map((o) => (
+                        <li key={o.id} className="flex justify-between gap-4 p-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm text-zinc-300">{o.deskripsi_pekerjaan || "—"}</p>
+                            <p className="text-xs text-zinc-500 mt-1">
+                              Deadline: {formatDateDDMMYYYY(o.deadline)} · Mulai: {formatDateDDMMYYYY(o.mulai_tanggal)} · Uang: {o.kesepakatan_brief_uang || "—"} · Masuk: {formatDateDDMMYYYY(o.kapan_uang_masuk)}
+                            </p>
+                            <p className="text-xs mt-1 text-amber-300">
+                              Countdown: {formatCountdown(o.deadline, nowMs)}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => del(o.id)}
+                            className="text-sm text-red-400 hover:text-red-300 shrink-0"
+                          >
+                            Hapus
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           ))}
         </div>
@@ -1086,14 +1159,14 @@ function AdminPorto({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
 
   const fetchList = useCallback(async () => {
     try {
-      const res = await fetch(`${apiUrl}/api/porto`);
+      const res = await fetch(`${apiUrl}/api/admin/porto`, { headers: headers(adminKey) });
       const text = await res.text();
       const data = text ? JSON.parse(text) : {};
       if (data.ok && Array.isArray(data.porto)) setPorto(data.porto);
     } catch {
       setPorto([]);
     }
-  }, [apiUrl]);
+  }, [apiUrl, adminKey]);
 
   // Daftar layanan dari Kelola Layanan (sama dengan Order Layanan), dikelompokkan per tag.
   useEffect(() => {
@@ -1167,12 +1240,36 @@ function AdminPorto({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
     if (res.ok) fetchList();
   };
 
+  const toggleClose = async (id: string, currentClosed: boolean) => {
+    const res = await fetch(`${apiUrl}/api/admin/porto/close`, {
+      method: "POST",
+      headers: headers(adminKey),
+      body: JSON.stringify({ id, closed: !currentClosed }),
+    });
+    if (res.ok) fetchList();
+  };
+
+  const setAllPortoClosed = async (closed: boolean) => {
+    if (porto.length === 0) return;
+    for (const item of porto) {
+      if (!!item.closed !== closed) {
+        await fetch(`${apiUrl}/api/admin/porto/close`, {
+          method: "POST",
+          headers: headers(adminKey),
+          body: JSON.stringify({ id: item.id, closed }),
+        });
+      }
+    }
+    fetchList();
+  };
+
   const imageBase = apiUrl.replace(/\/$/, "");
+  const allClosed = porto.length > 0 && porto.every((p) => !!p.closed);
 
   return (
     <section className="rounded-xl border border-rasya-border bg-rasya-surface p-6">
       <h2 className="text-lg font-semibold text-white mb-4">4. Upload Porto</h2>
-      <p className="text-sm text-zinc-400 mb-4">Proyek yang sudah selesai kontrak (bukti nyata).</p>
+      <p className="text-sm text-zinc-400 mb-4">Proyek yang sudah selesai kontrak (bukti nyata). Porto bisa ditutup/buka supaya section Porto di halaman utama bisa di-hide sepenuhnya saat diperlukan.</p>
       <div className="grid gap-3 sm:grid-cols-2 mb-6">
         <input
           type="text"
@@ -1273,6 +1370,27 @@ function AdminPorto({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
           </button>
         </div>
       </div>
+      {porto.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAllPortoClosed(true)}
+            className="text-xs rounded border border-amber-500/50 px-2 py-1 text-amber-400 hover:bg-amber-500/20"
+          >
+            Tutup semua dari halaman utama
+          </button>
+          <button
+            type="button"
+            onClick={() => setAllPortoClosed(false)}
+            className="text-xs rounded border border-emerald-500/50 px-2 py-1 text-emerald-400 hover:bg-emerald-500/20"
+          >
+            Buka semua di halaman utama
+          </button>
+          <span className="text-xs text-zinc-500">
+            Status saat ini: {allClosed ? "Semua porto tertutup" : "Sebagian/semua porto terbuka"}
+          </span>
+        </div>
+      )}
       {porto.length === 0 ? (
         <p className="text-sm text-zinc-500">Belum ada porto. Upload dari form di atas.</p>
       ) : (
@@ -1291,7 +1409,7 @@ function AdminPorto({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
               </div>
               <ul className="divide-y divide-rasya-border/50">
                 {items.map((p) => (
-                  <li key={p.id} className="flex gap-4 p-3">
+                  <li key={p.id} className={`flex gap-4 p-3 ${p.closed ? "opacity-70" : ""}`}>
                     {p.image_url && (
                       <img
                         src={p.image_url.startsWith("http") ? p.image_url : `${imageBase}${p.image_url}`}
@@ -1300,7 +1418,7 @@ function AdminPorto({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
                       />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-white">
+                      <p className={`font-medium ${p.closed ? "text-zinc-500 line-through" : "text-white"}`}>
                         {p.title}
                         {p.layanan && p.layanan.length > 0 && (
                           <span className="font-normal text-rasya-accent ml-1">
@@ -1308,18 +1426,34 @@ function AdminPorto({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
                           </span>
                         )}
                       </p>
+                      <p className={`text-xs mt-0.5 ${p.closed ? "text-amber-400" : "text-emerald-400"}`}>
+                        {p.closed ? "Ditutup (tidak tampil di halaman utama)" : "Terbuka (tampil di halaman utama)"}
+                      </p>
                       {p.link_url && (
                         <p className="text-xs text-zinc-500 truncate mt-0.5">→ {p.link_url}</p>
                       )}
                       <p className="text-sm text-zinc-500 truncate">{p.description}</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => del(p.id)}
-                      className="text-sm text-red-400 hover:text-red-300 shrink-0"
-                    >
-                      Hapus
-                    </button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleClose(p.id, !!p.closed)}
+                        className={`rounded border px-2 py-1 text-xs font-medium ${
+                          p.closed
+                            ? "border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20"
+                            : "border-amber-500/50 text-amber-400 hover:bg-amber-500/20"
+                        }`}
+                      >
+                        {p.closed ? "Buka" : "Tutup"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => del(p.id)}
+                        className="text-sm text-red-400 hover:text-red-300"
+                      >
+                        Hapus
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
