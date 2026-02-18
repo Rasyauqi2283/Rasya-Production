@@ -8,6 +8,7 @@ import JasaLanes from "@/components/JasaLanes";
 import LayananSection from "@/components/LayananSection";
 import Link from "next/link";
 import PortoList from "@/components/PortoList";
+import AnimatedO from "@/components/AnimatedO";
 import { useLanguage } from "@/context/LanguageContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -52,7 +53,14 @@ export default function Home() {
             {t("hero_tagline")}
           </p>
           <h1 className="mb-6 text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
-            Rasya <span className="text-rasya-accent">Production</span>
+            Rasya{" "}
+            <span className="text-rasya-accent">
+              Pr
+              <AnimatedO />
+              ducti
+              <AnimatedO />
+              n
+            </span>
           </h1>
           <p className="mx-auto max-w-xl text-lg text-zinc-400">
             {t("hero_subtitle")}

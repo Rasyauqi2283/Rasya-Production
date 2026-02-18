@@ -5,22 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Lang } from "@/lib/translations";
-
-function AnimatedO() {
-  return (
-    <span className="inline-flex items-center justify-center align-middle mx-[0.05em] w-[1em] h-[1em]">
-      {/* Animated aperture O from logo; eslint ok: decorative SVG with animation */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/Animate_O.svg"
-        alt=""
-        aria-hidden
-        className="w-full h-full object-contain animate-spin"
-        style={{ animationDuration: "4s" }}
-      />
-    </span>
-  );
-}
+import AnimatedO from "@/components/AnimatedO";
 
 const LOGO = (
   <>
