@@ -10,17 +10,24 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// PortoTool is one skill/tool used in the project (name + short description).
+type PortoTool struct {
+	Name string `json:"name"`
+	Desc string `json:"desc"`
+}
+
 // PortoItem is one portfolio entry (project selesai kontrak).
 type PortoItem struct {
-	ID          string    `json:"id"`
-	Title       string    `json:"title"`
-	Tag         string    `json:"tag"`
-	Description string    `json:"description"`
-	ImageURL    string    `json:"image_url"` // relative path or full URL
-	LinkURL     string    `json:"link_url"`  // URL website/laman (klik card = buka link)
-	Layanan     []string  `json:"layanan"`   // layanan jasa (multiple)
-	Closed      bool      `json:"closed"`    // true = disembunyikan dari halaman utama
-	CreatedAt   time.Time `json:"created_at"`
+	ID          string      `json:"id"`
+	Title       string      `json:"title"`
+	Tag         string      `json:"tag"`
+	Description string      `json:"description"`
+	ImageURL    string      `json:"image_url"` // relative path or full URL
+	LinkURL     string      `json:"link_url"`  // URL website/laman (klik card = buka link)
+	Layanan     []string    `json:"layanan"`   // layanan jasa (multiple)
+	ToolsUsed   []PortoTool `json:"tools_used"` // skill & tools dengan penjelasan singkat
+	Closed      bool        `json:"closed"`    // true = disembunyikan dari halaman utama
+	CreatedAt   time.Time   `json:"created_at"`
 }
 
 // PortoStore holds portfolio items in memory or PostgreSQL (when pool is set).
@@ -40,13 +47,16 @@ func NewPortoStoreFromDB(pool *pgxpool.Pool) *PortoStore {
 	return &PortoStore{pool: pool}
 }
 
-// Add appends a porto item. layanan can be nil. linkURL is optional (website/laman).
-func (p *PortoStore) Add(title, tag, desc, imageURL, linkURL string, layanan []string) PortoItem {
+// Add appends a porto item. layanan and toolsUsed can be nil. linkURL is optional.
+func (p *PortoStore) Add(title, tag, desc, imageURL, linkURL string, layanan []string, toolsUsed []PortoTool) PortoItem {
 	if layanan == nil {
 		layanan = []string{}
 	}
+	if toolsUsed == nil {
+		toolsUsed = []PortoTool{}
+	}
 	if p.pool != nil {
-		return p.addDB(title, tag, desc, imageURL, strings.TrimSpace(linkURL), layanan)
+		return p.addDB(title, tag, desc, imageURL, strings.TrimSpace(linkURL), layanan, toolsUsed)
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -58,6 +68,7 @@ func (p *PortoStore) Add(title, tag, desc, imageURL, linkURL string, layanan []s
 		ImageURL:    imageURL,
 		LinkURL:     strings.TrimSpace(linkURL),
 		Layanan:     layanan,
+		ToolsUsed:   toolsUsed,
 		Closed:      false,
 		CreatedAt:   time.Now().UTC(),
 	}
@@ -65,7 +76,7 @@ func (p *PortoStore) Add(title, tag, desc, imageURL, linkURL string, layanan []s
 	return item
 }
 
-func (p *PortoStore) addDB(title, tag, desc, imageURL, linkURL string, layanan []string) PortoItem {
+func (p *PortoStore) addDB(title, tag, desc, imageURL, linkURL string, layanan []string, toolsUsed []PortoTool) PortoItem {
 	item := PortoItem{
 		ID:          generateID(),
 		Title:       title,
@@ -74,14 +85,16 @@ func (p *PortoStore) addDB(title, tag, desc, imageURL, linkURL string, layanan [
 		ImageURL:    imageURL,
 		LinkURL:     linkURL,
 		Layanan:     layanan,
+		ToolsUsed:   toolsUsed,
 		Closed:      false,
 		CreatedAt:   time.Now().UTC(),
 	}
 	jb, _ := json.Marshal(item.Layanan)
+	toolsJb, _ := json.Marshal(item.ToolsUsed)
 	ctx := context.Background()
-	_, err := p.pool.Exec(ctx, `INSERT INTO porto (id, title, tag, description, image_url, link_url, layanan, closed, created_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-		item.ID, item.Title, item.Tag, item.Description, item.ImageURL, item.LinkURL, jb, item.Closed, item.CreatedAt)
+	_, err := p.pool.Exec(ctx, `INSERT INTO porto (id, title, tag, description, image_url, link_url, layanan, tools_used, closed, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+		item.ID, item.Title, item.Tag, item.Description, item.ImageURL, item.LinkURL, jb, toolsJb, item.Closed, item.CreatedAt)
 	if err != nil {
 		return PortoItem{}
 	}
@@ -124,9 +137,9 @@ func (p *PortoStore) ListAll() []PortoItem {
 
 func (p *PortoStore) listDB(all bool) []PortoItem {
 	ctx := context.Background()
-	q := `SELECT id, title, tag, description, image_url, link_url, layanan, closed, created_at FROM porto ORDER BY created_at DESC`
+	q := `SELECT id, title, tag, description, image_url, link_url, layanan, COALESCE(tools_used,'[]'), closed, created_at FROM porto ORDER BY created_at DESC`
 	if !all {
-		q = `SELECT id, title, tag, description, image_url, link_url, layanan, closed, created_at FROM porto WHERE closed = false ORDER BY created_at DESC`
+		q = `SELECT id, title, tag, description, image_url, link_url, layanan, COALESCE(tools_used,'[]'), closed, created_at FROM porto WHERE closed = false ORDER BY created_at DESC`
 	}
 	rows, err := p.pool.Query(ctx, q)
 	if err != nil {
@@ -136,13 +149,17 @@ func (p *PortoStore) listDB(all bool) []PortoItem {
 	var out []PortoItem
 	for rows.Next() {
 		var item PortoItem
-		var layananJSON []byte
-		if err := rows.Scan(&item.ID, &item.Title, &item.Tag, &item.Description, &item.ImageURL, &item.LinkURL, &layananJSON, &item.Closed, &item.CreatedAt); err != nil {
+		var layananJSON, toolsJSON []byte
+		if err := rows.Scan(&item.ID, &item.Title, &item.Tag, &item.Description, &item.ImageURL, &item.LinkURL, &layananJSON, &toolsJSON, &item.Closed, &item.CreatedAt); err != nil {
 			return out
 		}
 		_ = json.Unmarshal(layananJSON, &item.Layanan)
 		if item.Layanan == nil {
 			item.Layanan = []string{}
+		}
+		_ = json.Unmarshal(toolsJSON, &item.ToolsUsed)
+		if item.ToolsUsed == nil {
+			item.ToolsUsed = []PortoTool{}
 		}
 		out = append(out, item)
 	}
@@ -206,6 +223,7 @@ func (p *PortoStore) SeedIfEmpty() {
 			ImageURL:    s.imageURL,
 			LinkURL:     s.linkURL,
 			Layanan:     s.layanan,
+			ToolsUsed:   []PortoTool{},
 			Closed:      false,
 			CreatedAt:   time.Now().UTC(),
 		}
@@ -265,13 +283,15 @@ func (p *PortoStore) seedIfEmptyDB() {
 			ImageURL:    s.imageURL,
 			LinkURL:     s.linkURL,
 			Layanan:     s.layanan,
+			ToolsUsed:   []PortoTool{},
 			Closed:      false,
 			CreatedAt:   time.Now().UTC(),
 		}
 		jb, _ := json.Marshal(item.Layanan)
-		_, _ = p.pool.Exec(ctx, `INSERT INTO porto (id, title, tag, description, image_url, link_url, layanan, closed, created_at)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-			item.ID, item.Title, item.Tag, item.Description, item.ImageURL, item.LinkURL, jb, item.Closed, item.CreatedAt)
+		toolsJb, _ := json.Marshal(item.ToolsUsed)
+		_, _ = p.pool.Exec(ctx, `INSERT INTO porto (id, title, tag, description, image_url, link_url, layanan, tools_used, closed, created_at)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+			item.ID, item.Title, item.Tag, item.Description, item.ImageURL, item.LinkURL, jb, toolsJb, item.Closed, item.CreatedAt)
 	}
 }
 

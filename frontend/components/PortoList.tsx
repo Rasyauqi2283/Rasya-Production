@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 
+type PortoToolEntry = { name: string; desc: string };
 type PortoItem = {
   id: string;
   title: string;
@@ -11,6 +12,7 @@ type PortoItem = {
   image_url: string;
   link_url?: string;
   layanan?: string[];
+  tools_used?: PortoToolEntry[];
   created_at: string;
 };
 
@@ -112,6 +114,21 @@ export default function PortoList({ apiUrl }: { apiUrl: string }) {
                 )}
               </h4>
               <p className="text-sm text-zinc-400">{item.description}</p>
+              {item.tools_used && item.tools_used.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-rasya-border/60">
+                  <p className="text-xs font-medium uppercase tracking-wider text-rasya-accent mb-2">
+                    Layanan & tools yang digunakan
+                  </p>
+                  <ul className="space-y-1.5">
+                    {item.tools_used.map((t, i) => (
+                      <li key={i} className="text-xs">
+                        <span className="font-medium text-zinc-300">{t.name}</span>
+                        {t.desc && <span className="text-zinc-500"> — {t.desc}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {href && (
                 <p className="mt-2 text-xs text-rasya-accent">Buka situs →</p>
               )}

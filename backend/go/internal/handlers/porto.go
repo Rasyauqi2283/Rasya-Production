@@ -35,6 +35,27 @@ func parseLayananJSON(raw string) []string {
 	return out
 }
 
+// parseToolsUsedJSON parses form value "tools_used" as JSON array of {name, desc}; returns nil if empty/invalid.
+func parseToolsUsedJSON(raw string) []store.PortoTool {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	var arr []store.PortoTool
+	if err := json.Unmarshal([]byte(raw), &arr); err != nil {
+		return nil
+	}
+	var out []store.PortoTool
+	for _, t := range arr {
+		t.Name = strings.TrimSpace(t.Name)
+		if t.Name != "" {
+			t.Desc = strings.TrimSpace(t.Desc)
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
 var PortoStore *store.PortoStore
 var PortoCfg *config.Config
 
@@ -91,6 +112,7 @@ func PortoAdd(w http.ResponseWriter, r *http.Request) {
 	description := strings.TrimSpace(r.FormValue("description"))
 	linkURL := strings.TrimSpace(r.FormValue("url"))
 	layanan := parseLayananJSON(r.FormValue("layanan"))
+	toolsUsed := parseToolsUsedJSON(r.FormValue("tools_used"))
 	if title == "" {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
@@ -129,7 +151,7 @@ func PortoAdd(w http.ResponseWriter, r *http.Request) {
 		}
 		imageURL = "/uploads/porto/" + filename
 	}
-	item := PortoStore.Add(title, tag, description, imageURL, linkURL, layanan)
+	item := PortoStore.Add(title, tag, description, imageURL, linkURL, layanan, toolsUsed)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "porto": item})

@@ -168,6 +168,7 @@ type OrderItem = {
   created_at: string;
   tickets?: RevisionTicket[];
 };
+type PortoToolEntry = { name: string; desc: string };
 type PortoItem = {
   id: string;
   title: string;
@@ -176,6 +177,7 @@ type PortoItem = {
   image_url: string;
   link_url?: string;
   layanan?: string[];
+  tools_used?: PortoToolEntry[];
   closed?: boolean;
   created_at: string;
 };
@@ -1491,6 +1493,8 @@ function AdminPorto({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
   const [linkUrl, setLinkUrl] = useState("");
   const [servicesForPorto, setServicesForPorto] = useState<Service[]>([]);
   const [layananList, setLayananList] = useState<string[]>([]);
+  const [toolsUsed, setToolsUsed] = useState<PortoToolEntry[]>([]);
+  const [toolsUsedOpen, setToolsUsedOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -1546,6 +1550,7 @@ function AdminPorto({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
       form.set("description", description.trim());
       if (linkUrl.trim()) form.set("url", linkUrl.trim());
       if (layananList.length) form.set("layanan", JSON.stringify(layananList));
+      if (toolsUsed.length) form.set("tools_used", JSON.stringify(toolsUsed));
       if (file) form.set("image", file);
       const res = await fetch(`${apiUrl}/api/admin/porto`, {
         method: "POST",
@@ -1558,6 +1563,7 @@ function AdminPorto({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
         setDescription("");
         setLinkUrl("");
         setLayananList([]);
+        setToolsUsed([]);
         setFile(null);
         fetchList();
       } else if (res.status === 401) {
@@ -1629,6 +1635,65 @@ function AdminPorto({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
           placeholder="Deskripsi singkat"
           className="sm:col-span-2 rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white placeholder-zinc-500 focus:border-rasya-accent focus:outline-none"
         />
+        <div className="sm:col-span-2">
+          <button
+            type="button"
+            onClick={() => setToolsUsedOpen((o) => !o)}
+            className="flex w-full items-center justify-between rounded-lg border border-rasya-border bg-rasya-dark/50 px-4 py-3 text-left text-sm text-zinc-300 hover:border-rasya-accent/50"
+            aria-expanded={toolsUsedOpen}
+          >
+            <span className="font-medium">
+              Layanan & tools yang digunakan
+              {toolsUsed.length > 0 && <span className="ml-2 text-rasya-accent">({toolsUsed.length})</span>}
+            </span>
+            <span className="shrink-0 text-zinc-500" aria-hidden>{toolsUsedOpen ? "▼" : "▶"}</span>
+          </button>
+          <p className="mt-1 text-xs text-zinc-500">Skill/tools dipakai dalam proyek + penjelasan singkat, agar client paham apa yang digunakan.</p>
+          {toolsUsedOpen && (
+            <div className="mt-3 space-y-3 rounded-lg border border-rasya-border bg-rasya-dark/30 p-4">
+              {toolsUsed.map((entry, idx) => (
+                <div key={idx} className="flex flex-wrap gap-2 items-start">
+                  <input
+                    type="text"
+                    value={entry.name}
+                    onChange={(e) => {
+                      const next = [...toolsUsed];
+                      next[idx] = { ...next[idx], name: e.target.value };
+                      setToolsUsed(next);
+                    }}
+                    placeholder="Nama (mis. React, Figma)"
+                    className="flex-1 min-w-[120px] rounded border border-rasya-border bg-rasya-dark px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-rasya-accent focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    value={entry.desc}
+                    onChange={(e) => {
+                      const next = [...toolsUsed];
+                      next[idx] = { ...next[idx], desc: e.target.value };
+                      setToolsUsed(next);
+                    }}
+                    placeholder="Penjelasan singkat"
+                    className="flex-1 min-w-[160px] rounded border border-rasya-border bg-rasya-dark px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-rasya-accent focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setToolsUsed((prev) => prev.filter((_, i) => i !== idx))}
+                    className="rounded border border-red-500/50 px-2 py-1.5 text-xs text-red-400 hover:bg-red-500/20"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setToolsUsed((prev) => [...prev, { name: "", desc: "" }])}
+                className="rounded-lg border border-rasya-accent/50 px-3 py-2 text-sm font-medium text-rasya-accent hover:bg-rasya-accent/10"
+              >
+                + Tambah skill/tool
+              </button>
+            </div>
+          )}
+        </div>
         <input
           type="url"
           value={linkUrl}
@@ -1779,6 +1844,11 @@ function AdminPorto({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
                         <p className="text-xs text-zinc-500 truncate mt-0.5">→ {p.link_url}</p>
                       )}
                       <p className="text-sm text-zinc-500 truncate">{p.description}</p>
+                      {p.tools_used && p.tools_used.length > 0 && (
+                        <p className="text-xs text-zinc-500 mt-1">
+                          Tools: {p.tools_used.map((t) => t.name).join(", ")}
+                        </p>
+                      )}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <button

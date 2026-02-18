@@ -6,13 +6,16 @@ import { useLanguage } from "@/context/LanguageContext";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 type ItemDesc = { id: string; en: string };
-/** Satu skill/tool dengan penjelasan (tanpa rating) — ditampilkan sebagai form/kartu */
+/** Satu skill/tool — klik tombol, penjelasan muncul di bawah */
 type SkillTool = { name: string; desc: ItemDesc };
 type AnalitikItem = {
   name: string;
   rating?: number;
   desc: ItemDesc;
-  /** Daftar skills & tools: masing-masing punya penjelasan, tampil sebagai form seperti daftar item */
+  /** Harga (mulai dari), revisi, estimasi pengerjaan */
+  harga?: string;
+  revisi?: string;
+  estimasi?: string;
   skillsRates?: SkillTool[];
 };
 
@@ -31,21 +34,21 @@ const ANALITIK_DATA: Record<(typeof CATEGORY_IDS)[number], AnalitikItem[]> = {
       { name: "Tema / plugin", desc: { id: "Kustomisasi tampilan dan fitur situs.", en: "Customize site look and features." } },
       { name: "Local by Flywheel", desc: { id: "Lingkungan development WordPress lokal.", en: "Local WordPress development environment." } },
     ]},
-    { name: "Frontend Developer", desc: { id: "Tampilan dan interaksi di browser. Markup, styling, responsif.", en: "Browser UI and interaction. Markup, styling, responsive." }, skillsRates: [
+    { name: "Frontend Developer", desc: { id: "Perbaikan script, styling, responsif, integrasi API. UI siap production.", en: "Script fixes, styling, responsive, API integration. Production-ready UI." }, harga: "1,2 jt (mulai dari)", revisi: "2x revisi", estimasi: "3–5 hari kerja", skillsRates: [
       { name: "React", desc: { id: "Library untuk UI berbasis komponen dan interaktif.", en: "Library for component-based, interactive UI." } },
       { name: "VS Code", desc: { id: "Editor kode untuk menulis dan debug.", en: "Code editor for writing and debugging." } },
       { name: "Next.js", desc: { id: "Framework React dengan SSR dan routing.", en: "React framework with SSR and routing." } },
       { name: "Tailwind CSS", desc: { id: "Framework CSS utility-first untuk styling cepat.", en: "Utility-first CSS framework for fast styling." } },
       { name: "Git", desc: { id: "Version control untuk kolaborasi dan riwayat kode.", en: "Version control for collaboration and code history." } },
     ]},
-    { name: "Backend Developer", desc: { id: "Server, API, dan logika aplikasi. REST API, database, auth.", en: "Server, API, and app logic. REST API, database, auth." }, skillsRates: [
+    { name: "Backend Developer", desc: { id: "API, database, auth. Perbaikan bug, fitur baru, integrasi.", en: "API, database, auth. Bug fixes, new features, integration." }, harga: "1,5 jt (mulai dari)", revisi: "2x revisi", estimasi: "5–7 hari kerja", skillsRates: [
       { name: "Go", desc: { id: "Bahasa backend untuk API dan layanan performa tinggi.", en: "Backend language for APIs and high-performance services." } },
       { name: "Node.js", desc: { id: "Runtime JavaScript di server untuk API dan tooling.", en: "JavaScript runtime on server for APIs and tooling." } },
       { name: "PostgreSQL", desc: { id: "Basis data relasional untuk menyimpan data aplikasi.", en: "Relational database for application data." } },
       { name: "Postman", desc: { id: "Tool untuk uji dan dokumentasi API.", en: "Tool for testing and documenting APIs." } },
       { name: "Docker", desc: { id: "Kontainerisasi untuk environment yang konsisten.", en: "Containerization for consistent environments." } },
     ]},
-    { name: "Fullstack Developer", desc: { id: "Frontend + backend dalam satu proyek. Dari awal sampai deploy.", en: "Frontend and backend in one project. From start to deploy." }, skillsRates: [
+    { name: "Fullstack Developer", desc: { id: "Frontend + backend satu proyek. Perbaikan, fitur baru, deploy.", en: "Frontend and backend in one project. Fixes, new features, deploy." }, harga: "2 jt (mulai dari)", revisi: "2x revisi", estimasi: "7–14 hari kerja", skillsRates: [
       { name: "React", desc: { id: "Library untuk UI berbasis komponen.", en: "Library for component-based UI." } },
       { name: "Next.js", desc: { id: "Framework React dengan SSR dan deploy mudah.", en: "React framework with SSR and easy deploy." } },
       { name: "Go / Node", desc: { id: "Backend untuk API dan logika server.", en: "Backend for API and server logic." } },
@@ -65,7 +68,7 @@ const ANALITIK_DATA: Record<(typeof CATEGORY_IDS)[number], AnalitikItem[]> = {
     ]},
   ],
   design: [
-    { name: "Figma / UI Designer", rating: 4, desc: { id: "Desain antarmuka dan prototyping.", en: "Interface design and prototyping." }, skillsRates: [
+    { name: "Figma / UI Designer", rating: 4, desc: { id: "Mockup, wireframe, design system. Siap handoff ke dev.", en: "Mockup, wireframe, design system. Ready for dev handoff." }, harga: "400 rb (mulai dari)", revisi: "2x revisi", estimasi: "3–5 hari kerja", skillsRates: [
       { name: "Figma", desc: { id: "Tool utama untuk UI, prototype, dan design system.", en: "Main tool for UI, prototype, and design system." } },
       { name: "Adobe XD", desc: { id: "Prototype dan design antarmuka.", en: "Prototyping and interface design." } },
       { name: "Sketch", desc: { id: "Desain UI untuk Mac.", en: "UI design for Mac." } },
@@ -104,7 +107,7 @@ const ANALITIK_DATA: Record<(typeof CATEGORY_IDS)[number], AnalitikItem[]> = {
     ]},
   ],
   konten_kreatif: [
-    { name: "Video Editor", rating: 3, desc: { id: "Footage jadi konten siap tayang.", en: "Footage to ready-to-publish content." }, skillsRates: [
+    { name: "Video Editor", rating: 3, desc: { id: "Editing, color grading, subtitle. Konten siap tayang.", en: "Editing, color grading, subtitle. Ready-to-publish content." }, harga: "500 rb (mulai dari)", revisi: "2x revisi", estimasi: "5–7 hari kerja", skillsRates: [
       { name: "Premiere Pro", desc: { id: "Editing timeline dan integrasi Adobe.", en: "Timeline editing and Adobe integration." } },
       { name: "DaVinci Resolve", desc: { id: "Editing dan color grading profesional.", en: "Professional editing and color grading." } },
       { name: "CapCut", desc: { id: "Editing cepat untuk konten pendek.", en: "Quick editing for short content." } },
@@ -197,14 +200,14 @@ const ANALITIK_DATA: Record<(typeof CATEGORY_IDS)[number], AnalitikItem[]> = {
   ],
 };
 
-type ViewStep = "categories" | "items" | "explain";
+type ViewStep = "categories" | "items";
 
 type Props = {
   open: boolean;
   onClose: () => void;
 };
 
-/** Item dari API (nama + penjelasan saja, tanpa rating) */
+/** Item dari API (nama + penjelasan saja) */
 type ApiAnalitikItem = { name: string; desc: string };
 
 export default function AnalitikOverlay({ open, onClose }: Props) {
@@ -212,7 +215,8 @@ export default function AnalitikOverlay({ open, onClose }: Props) {
   const [step, setStep] = useState<ViewStep>("categories");
   const [selectedCategory, setSelectedCategory] = useState<(typeof CATEGORY_IDS)[number] | null>(null);
   const [selectedItem, setSelectedItem] = useState<AnalitikItem | null>(null);
-  const [layer2Open, setLayer2Open] = useState(false); // softskill layer
+  const [selectedSkill, setSelectedSkill] = useState<SkillTool | null>(null);
+  const [layer2Open, setLayer2Open] = useState(false);
   const [apiItemsByCategory, setApiItemsByCategory] = useState<Record<string, ApiAnalitikItem[]>>({});
 
   const fetchAnalitik = useCallback(async () => {
@@ -250,12 +254,14 @@ export default function AnalitikOverlay({ open, onClose }: Props) {
       setStep("categories");
       setSelectedCategory(null);
       setSelectedItem(null);
+      setSelectedSkill(null);
       setLayer2Open(false);
       return;
     }
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (step === "explain") setStep("items");
+        if (selectedSkill) setSelectedSkill(null);
+        else if (selectedItem) setSelectedItem(null);
         else if (step === "items") setStep("categories");
         else onClose();
       }
@@ -266,7 +272,7 @@ export default function AnalitikOverlay({ open, onClose }: Props) {
       document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = "";
     };
-  }, [open, step, onClose]);
+  }, [open, step, selectedItem, selectedSkill, onClose]);
 
   if (!open) return null;
 
@@ -288,17 +294,15 @@ export default function AnalitikOverlay({ open, onClose }: Props) {
           <h2 id="analitik-overlay-title" className="font-display text-lg font-semibold text-white">
             {step === "categories" && t("analitik_layer1_title")}
             {step === "items" && t(selectedCategory ? CATEGORY_LABEL_KEYS[selectedCategory] : "analitik_layer1_title")}
-            {step === "explain" && selectedItem?.name}
           </h2>
           <div className="flex items-center gap-1">
             {step !== "categories" && (
               <button
                 type="button"
                 onClick={() => {
-                  if (step === "explain") {
-                    setSelectedItem(null);
-                    setStep("items");
-                  } else {
+                  if (selectedSkill) setSelectedSkill(null);
+                  else if (selectedItem) setSelectedItem(null);
+                  else {
                     setSelectedCategory(null);
                     setStep("categories");
                   }
@@ -356,11 +360,11 @@ export default function AnalitikOverlay({ open, onClose }: Props) {
             </>
           )}
 
-          {/* Step 2: Items in selected category */}
+          {/* Step 2: Item buttons → klik tampil penjelasan + harga/revisi/estimasi di bawah; Skills & tools juga tombol klik */}
           {step === "items" && selectedCategory && (
             <div className="space-y-4">
               <p className="text-sm text-zinc-400">
-                {isEn ? "Choose one to see the description." : "Pilih satu untuk melihat penjelasan."}
+                {isEn ? "Click an item to see description, price, revisions & turnaround below." : "Klik salah satu untuk melihat penjelasan, harga, revisi & estimasi di bawah."}
               </p>
               <div className="flex flex-wrap gap-2">
                 {itemsForCategory(selectedCategory).map((item) => (
@@ -368,51 +372,76 @@ export default function AnalitikOverlay({ open, onClose }: Props) {
                     key={item.name}
                     type="button"
                     onClick={() => {
-                      setSelectedItem(item);
-                      setStep("explain");
+                      setSelectedItem(selectedItem?.name === item.name ? null : item);
+                      setSelectedSkill(null);
                     }}
-                    className="rounded-lg border border-rasya-border bg-rasya-dark/60 px-3 py-2 text-left text-sm text-zinc-300 transition hover:border-rasya-accent/50 hover:text-white"
+                    className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+                      selectedItem?.name === item.name
+                        ? "border-rasya-accent bg-rasya-accent/20 text-rasya-accent"
+                        : "border-rasya-border bg-rasya-dark/60 text-zinc-300 hover:border-rasya-accent/50 hover:text-white"
+                    }`}
                   >
                     {item.name}
                   </button>
                 ))}
               </div>
-            </div>
-          )}
 
-          {/* Step 3: Explain — judul + penjelasan (tanpa rating); skillsRates hanya dari data statis */}
-          {step === "explain" && selectedItem && (
-            <div className="space-y-4">
-              {selectedItem.skillsRates && selectedItem.skillsRates.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wider text-rasya-accent mb-3">
-                    {isEn ? "Skills & tools" : "Skills & tools"}
+              {selectedItem && (
+                <div className="rounded-xl border border-rasya-border bg-rasya-dark/50 p-4 space-y-3">
+                  <p className="text-sm text-zinc-300 leading-relaxed">
+                    {isEn ? selectedItem.desc.en : selectedItem.desc.id}
                   </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {selectedItem.skillsRates.map((skill, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-lg border border-rasya-border bg-rasya-dark/60 px-3 py-2 text-left"
-                      >
-                        <p className="text-sm font-medium text-zinc-200">{skill.name}</p>
-                        <p className="mt-0.5 text-xs text-zinc-400 leading-snug">
-                          {isEn ? skill.desc.en : skill.desc.id}
-                        </p>
+                  <dl className="grid grid-cols-1 gap-2 text-sm">
+                    {selectedItem.harga != null && selectedItem.harga !== "" && (
+                      <div>
+                        <dt className="text-xs text-zinc-500">{isEn ? "Price (from)" : "Harga (mulai dari)"}</dt>
+                        <dd className="font-medium text-rasya-accent">{selectedItem.harga}</dd>
                       </div>
-                    ))}
-                  </div>
+                    )}
+                    {selectedItem.revisi != null && selectedItem.revisi !== "" && (
+                      <div>
+                        <dt className="text-xs text-zinc-500">{isEn ? "Revisions" : "Revisi"}</dt>
+                        <dd className="text-zinc-300">{selectedItem.revisi}</dd>
+                      </div>
+                    )}
+                    {selectedItem.estimasi != null && selectedItem.estimasi !== "" && (
+                      <div>
+                        <dt className="text-xs text-zinc-500">{isEn ? "Turnaround" : "Estimasi pengerjaan"}</dt>
+                        <dd className="text-zinc-300 font-medium">{selectedItem.estimasi}</dd>
+                      </div>
+                    )}
+                  </dl>
+
+                  {selectedItem.skillsRates && selectedItem.skillsRates.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wider text-rasya-accent mb-2">
+                        {isEn ? "Skills & tools (click to see description)" : "Skills & tools (klik untuk penjelasan)"}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedItem.skillsRates.map((skill, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setSelectedSkill(selectedSkill?.name === skill.name ? null : skill)}
+                            className={`rounded-lg border px-3 py-1.5 text-xs transition ${
+                              selectedSkill?.name === skill.name
+                                ? "border-rasya-accent bg-rasya-accent/20 text-rasya-accent"
+                                : "border-rasya-border bg-rasya-dark/60 text-zinc-400 hover:border-rasya-accent/50 hover:text-white"
+                            }`}
+                          >
+                            {skill.name}
+                          </button>
+                        ))}
+                      </div>
+                      {selectedSkill && (
+                        <p className="mt-2 text-xs text-zinc-400 leading-snug pl-1 border-l-2 border-rasya-accent/50">
+                          {isEn ? selectedSkill.desc.en : selectedSkill.desc.id}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
-              <p className="text-sm text-zinc-400 leading-relaxed">
-                {isEn ? selectedItem.desc.en : selectedItem.desc.id}
-              </p>
-              <button
-                type="button"
-                onClick={() => setStep("items")}
-                className="text-xs font-medium text-rasya-accent hover:underline"
-              >
-                {t("analitik_back")} ← {selectedCategory ? t(CATEGORY_LABEL_KEYS[selectedCategory]) : ""}
-              </button>
             </div>
           )}
 

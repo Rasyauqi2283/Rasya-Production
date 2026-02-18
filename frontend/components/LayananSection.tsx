@@ -52,6 +52,7 @@ export default function LayananSection() {
   const { t } = useLanguage();
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState<string>(SERVICE_TAGS[0]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -75,6 +76,12 @@ export default function LayananSection() {
 
   const category = categories.find((c) => c.id === categoryId) ?? categories[0];
   const hasAny = categories.some((c) => c.services.length > 0);
+  const services = category?.services ?? [];
+
+  const handleCategoryChange = (label: string) => {
+    setCategoryId(label);
+    setExpandedId(null);
+  };
 
   return (
     <section
@@ -97,7 +104,7 @@ export default function LayananSection() {
                   <button
                     key={label}
                     type="button"
-                    onClick={() => setCategoryId(label)}
+                    onClick={() => handleCategoryChange(label)}
                     className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
                       categoryId === label
                         ? "border-rasya-accent bg-rasya-accent/20 text-rasya-accent"
@@ -112,6 +119,11 @@ export default function LayananSection() {
             <h3 className="text-3xl font-bold text-white sm:text-4xl">
               {t("services_title")}
             </h3>
+            {hasAny && (
+              <p className="mt-2 text-sm text-zinc-500">
+                {t("services_click_to_reveal")}
+              </p>
+            )}
           </div>
         </div>
 
@@ -120,42 +132,59 @@ export default function LayananSection() {
         ) : !hasAny ? (
           <p className="text-sm text-zinc-500">{t("services_empty")}</p>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {(category?.services ?? []).map((item) => {
+          <div className="space-y-2">
+            {services.map((item) => {
               const { title: displayTitle, desc: displayDesc } = getServiceDisplay(t, item.title, item.desc || "");
               const priceLabel = (item.price_awal || "").replace(/\s*\(harga awal\)\s*/gi, "").trim();
               const priceDisplay = priceLabel ? `${t("services_price_from")} ${priceLabel}` : t("services_brief");
+              const isExpanded = expandedId === item.id;
               return (
-              <div
-                key={item.id}
-                className="rounded-xl border border-rasya-border bg-rasya-card p-6 transition hover:border-rasya-accent/30 flex flex-col"
-              >
-                <h4 className="mb-3 text-lg font-semibold text-white">
-                  {displayTitle}
-                </h4>
-                <p className="mb-4 text-sm text-zinc-400 leading-relaxed flex-1">
-                  {displayDesc || "—"}
-                </p>
-                <div className="text-sm pt-2 border-t border-rasya-border">
-                  {item.closed ? (
-                    <p className="font-medium text-zinc-500">{t("services_closed")}</p>
-                  ) : item.discount_percent && item.discount_percent > 0 ? (
-                    <>
-                      <p className="text-zinc-500 line-through">
-                        {priceDisplay}
+                <div
+                  key={item.id}
+                  className="rounded-xl border border-rasya-border bg-rasya-card overflow-hidden transition hover:border-rasya-accent/30"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setExpandedId(isExpanded ? null : item.id)}
+                    className="w-full flex items-center justify-between gap-3 px-4 py-4 text-left"
+                    aria-expanded={isExpanded}
+                  >
+                    <h4 className="text-lg font-semibold text-white">
+                      {displayTitle}
+                    </h4>
+                    <span
+                      className={`shrink-0 text-rasya-accent transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                      aria-hidden
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </span>
+                  </button>
+                  {isExpanded && (
+                    <div className="border-t border-rasya-border px-4 pb-4 pt-2">
+                      <p className="text-sm text-zinc-400 leading-relaxed mb-4">
+                        {displayDesc || "—"}
                       </p>
-                      <p className="font-medium text-rasya-accent mt-0.5">
-                        {t("services_discount")} {item.discount_percent}%: {item.price_after_discount || "—"}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="font-medium text-rasya-accent">
-                      {priceDisplay}
-                    </p>
+                      <div className="text-sm pt-2 border-t border-rasya-border/60">
+                        {item.closed ? (
+                          <p className="font-medium text-zinc-500">{t("services_closed")}</p>
+                        ) : item.discount_percent && item.discount_percent > 0 ? (
+                          <>
+                            <p className="text-zinc-500 line-through">{priceDisplay}</p>
+                            <p className="font-medium text-rasya-accent mt-0.5">
+                              {t("services_discount")} {item.discount_percent}%: {item.price_after_discount || "—"}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="font-medium text-rasya-accent">{priceDisplay}</p>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
-            ); })}
+              );
+            })}
           </div>
         )}
       </div>

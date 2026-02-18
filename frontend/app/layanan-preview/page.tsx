@@ -31,10 +31,9 @@ export default function LayananPreviewIndexPage() {
         <p className="mb-3 font-mono text-xs uppercase tracking-widest text-rasya-accent">
           Layanan Preview
         </p>
-        <h1 className="mb-3 text-4xl font-bold text-white">Web & Digital Preview</h1>
+        <h1 className="mb-3 text-4xl font-bold text-white">Preview template layanan</h1>
         <p className="mb-10 max-w-2xl text-zinc-400">
-          Halaman demo untuk template layanan. Pilih salah satu tema untuk melihat desain preview
-          yang lebih serius.
+          Pilih tema untuk melihat desain preview. Template bisa ditambah untuk Web & Digital, Design, Konten, dan lainnya.
         </p>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

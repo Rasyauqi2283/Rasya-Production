@@ -1,15 +1,20 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const AUTO_CLOSE_MS = 5000;
 const SLIDE_COUNT = 2;
 
 export default function RamadanAdOverlay() {
+  const pathname = usePathname();
   const [visible, setVisible] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+
+  const showAd = pathname === "/" || (pathname != null && pathname.startsWith("/layanan-preview"));
+  if (!showAd) return null;
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(false), AUTO_CLOSE_MS);
