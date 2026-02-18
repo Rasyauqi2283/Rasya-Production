@@ -8,7 +8,7 @@ import type { Lang } from "@/lib/translations";
 
 function AnimatedO() {
   return (
-    <span className="inline-flex items-center align-middle mx-0.5 w-[0.9em] h-[0.9em]">
+    <span className="inline-flex items-center justify-center align-middle mx-[0.05em] w-[1em] h-[1em]">
       {/* Animated aperture O from logo; eslint ok: decorative SVG with animation */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -32,9 +32,14 @@ const LOGO = (
       className="mr-2.5 shrink-0 object-contain"
     />
     <span className="align-middle">
-      Rasya<span className="text-rasya-accent">.</span>Prod
-      <AnimatedO />
-      uction
+      Rasya{" "}
+      <span className="text-rasya-accent">
+        Pr
+        <AnimatedO />
+        ducti
+        <AnimatedO />
+        n
+      </span>
     </span>
   </>
 );
