@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 type ItemDesc = { id: string; en: string };
 /** Satu skill/tool dengan penjelasan (tanpa rating) — ditampilkan sebagai form/kartu */
@@ -202,12 +204,46 @@ type Props = {
   onClose: () => void;
 };
 
+/** Item dari API (nama + penjelasan saja, tanpa rating) */
+type ApiAnalitikItem = { name: string; desc: string };
+
 export default function AnalitikOverlay({ open, onClose }: Props) {
   const { t, lang } = useLanguage();
   const [step, setStep] = useState<ViewStep>("categories");
   const [selectedCategory, setSelectedCategory] = useState<(typeof CATEGORY_IDS)[number] | null>(null);
   const [selectedItem, setSelectedItem] = useState<AnalitikItem | null>(null);
   const [layer2Open, setLayer2Open] = useState(false); // softskill layer
+  const [apiItemsByCategory, setApiItemsByCategory] = useState<Record<string, ApiAnalitikItem[]>>({});
+
+  const fetchAnalitik = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/analitik`);
+      const data = await res.json().catch(() => ({}));
+      if (data?.ok && data.items && typeof data.items === "object") {
+        setApiItemsByCategory(data.items);
+      } else {
+        setApiItemsByCategory({});
+      }
+    } catch {
+      setApiItemsByCategory({});
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) fetchAnalitik();
+  }, [open, fetchAnalitik]);
+
+  // Gabung: kalau ada data dari API untuk kategori ini, pakai (nama + penjelasan); else pakai data statis.
+  const itemsForCategory = (cat: (typeof CATEGORY_IDS)[number]): AnalitikItem[] => {
+    const apiList = apiItemsByCategory[cat];
+    if (apiList?.length) {
+      return apiList.map((x) => ({
+        name: x.name,
+        desc: { id: x.desc, en: x.desc },
+      }));
+    }
+    return ANALITIK_DATA[cat] ?? [];
+  };
 
   useEffect(() => {
     if (!open) {
@@ -324,10 +360,10 @@ export default function AnalitikOverlay({ open, onClose }: Props) {
           {step === "items" && selectedCategory && (
             <div className="space-y-4">
               <p className="text-sm text-zinc-400">
-                {isEn ? "Choose one to see details and skill/tool ratings." : "Pilih satu untuk melihat penjelasan dan rating tools."}
+                {isEn ? "Choose one to see the description." : "Pilih satu untuk melihat penjelasan."}
               </p>
               <div className="flex flex-wrap gap-2">
-                {ANALITIK_DATA[selectedCategory].map((item) => (
+                {itemsForCategory(selectedCategory).map((item) => (
                   <button
                     key={item.name}
                     type="button"
@@ -338,14 +374,13 @@ export default function AnalitikOverlay({ open, onClose }: Props) {
                     className="rounded-lg border border-rasya-border bg-rasya-dark/60 px-3 py-2 text-left text-sm text-zinc-300 transition hover:border-rasya-accent/50 hover:text-white"
                   >
                     {item.name}
-                    {item.rating != null && <span className="ml-1 text-rasya-accent">{item.rating}/5</span>}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Step 3: Explain — judul + skillsRates (rating tools) + desc */}
+          {/* Step 3: Explain — judul + penjelasan (tanpa rating); skillsRates hanya dari data statis */}
           {step === "explain" && selectedItem && (
             <div className="space-y-4">
               {selectedItem.skillsRates && selectedItem.skillsRates.length > 0 && (

@@ -98,6 +98,15 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 			note TEXT NOT NULL DEFAULT '',
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 		)`,
+		`CREATE TABLE IF NOT EXISTS analitik_items (
+			id TEXT PRIMARY KEY,
+			category TEXT NOT NULL,
+			name TEXT NOT NULL,
+			"desc" TEXT NOT NULL DEFAULT '',
+			"order" INT NOT NULL DEFAULT 0,
+			closed BOOLEAN NOT NULL DEFAULT false,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		)`,
 	}
 	for _, q := range queries {
 		if _, err := pool.Exec(ctx, q); err != nil {

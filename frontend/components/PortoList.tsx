@@ -35,17 +35,20 @@ export default function PortoList({ apiUrl }: { apiUrl: string }) {
       .finally(() => setLoading(false));
   }, [apiUrl]);
 
-  const tags = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          porto
-            .map((p) => p.tag.trim())
-            .filter((t) => t.length > 0)
-        )
-      ),
-    [porto]
-  );
+  const TAG_PRIORITY = ["Web & Digital", "Design", "Konten & Kreatif", "Lain-lain"];
+  const tags = useMemo(() => {
+    const set = new Set(porto.map((p) => p.tag.trim()).filter((t) => t.length > 0));
+    const list = Array.from(set);
+    list.sort((a, b) => {
+      const i = TAG_PRIORITY.indexOf(a);
+      const j = TAG_PRIORITY.indexOf(b);
+      if (i === -1 && j === -1) return a.localeCompare(b);
+      if (i === -1) return 1;
+      if (j === -1) return -1;
+      return i - j;
+    });
+    return list;
+  }, [porto]);
   const selectedTag = activeTag || (tags[0] ?? "");
   const filtered = selectedTag
     ? porto.filter((p) => p.tag.trim() === selectedTag)

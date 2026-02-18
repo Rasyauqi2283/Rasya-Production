@@ -29,7 +29,7 @@ type Service struct {
 }
 
 // ServiceTags are the allowed tag values (untuk filter dan grouping).
-var ServiceTags = []string{"Design", "Web & Digital", "Konten & Kreatif", "Lain-lain"}
+var ServiceTags = []string{"Web & Digital", "Design", "Konten & Kreatif", "Lain-lain"}
 
 // ServiceStore holds services in memory or PostgreSQL (when pool is set).
 type ServiceStore struct {

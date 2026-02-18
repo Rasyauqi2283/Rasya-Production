@@ -26,6 +26,7 @@ func main() {
 	var portoStore *store.PortoStore
 	var orderStore *store.OrderStore
 	var revisionTicketStore *store.RevisionTicketStore
+	var analitikStore *store.AnalitikStore
 	var taperStore *store.TaperStore
 
 	if cfg.DatabaseURL != "" {
@@ -46,6 +47,7 @@ func main() {
 		portoStore.SeedIfEmpty()
 		orderStore = store.NewOrderStoreFromDB(pool)
 		revisionTicketStore = store.NewRevisionTicketStoreFromDB(pool)
+		analitikStore = store.NewAnalitikStoreFromDB(pool)
 		taperStore = store.NewTaperStoreFromDB(pool)
 		log.Println("Raspro connected to PostgreSQL (real-time persistent)")
 	} else {
@@ -56,6 +58,7 @@ func main() {
 		portoStore.SeedIfEmpty()
 		orderStore = store.NewOrderStore()
 		revisionTicketStore = store.NewRevisionTicketStore()
+		analitikStore = store.NewAnalitikStore()
 		taperStore = store.NewTaperStore()
 	}
 
@@ -66,6 +69,7 @@ func main() {
 	handlers.PortoCfg = cfg
 	handlers.OrderStore = orderStore
 	handlers.RevisionTicketStore = revisionTicketStore
+	handlers.AnalitikStore = analitikStore
 	handlers.AuthCfg = cfg
 	handlers.TaperStore = taperStore
 	handlers.TaperCfg = cfg
@@ -83,6 +87,7 @@ func main() {
 	r.Get("/api/reviews", handlers.ReviewsList)
 	r.Get("/api/services", handlers.ServicesList)
 	r.Get("/api/porto", handlers.PortoList)
+	r.Get("/api/analitik", handlers.AnalitikList)
 	r.Get("/api/orders/antrian", handlers.OrdersAntrian)
 	r.Post("/api/revisi/klaim", handlers.RevisiKlaim)
 	r.Post("/api/auth/admin", handlers.AuthAdmin)
@@ -99,6 +104,11 @@ func main() {
 		r.Put("/api/admin/services", handlers.ServicesUpdate)
 		r.Post("/api/admin/services/close", handlers.ServicesSetClosed)
 		r.Delete("/api/admin/services", handlers.ServicesDelete)
+		r.Get("/api/admin/analitik", handlers.AnalitikListAdmin)
+		r.Post("/api/admin/analitik", handlers.AnalitikAdd)
+		r.Put("/api/admin/analitik", handlers.AnalitikUpdate)
+		r.Post("/api/admin/analitik/close", handlers.AnalitikSetClosed)
+		r.Delete("/api/admin/analitik", handlers.AnalitikDelete)
 		r.Get("/api/admin/porto", handlers.PortoListAdmin)
 		r.Post("/api/admin/porto", handlers.PortoAdd)
 		r.Post("/api/admin/porto/close", handlers.PortoSetClosed)

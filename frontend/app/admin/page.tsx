@@ -7,20 +7,15 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const ADMIN_KEY_STORAGE = "rasya_admin_key";
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
-const SERVICE_TAGS = ["Design", "Web & Digital", "Konten & Kreatif", "Lain-lain"] as const;
+const SERVICE_TAGS = ["Web & Digital", "Design", "Konten & Kreatif", "Lain-lain"] as const;
 
-// Dashboard analytic: skill/tech rating (skala 5). Bisa diedit manual di sini.
-const SKILL_RATINGS: { name: string; rating: number; max?: number }[] = [
-  { name: "Go (Golang)", rating: 4 },
-  { name: "Next.js", rating: 4 },
-  { name: "React", rating: 4 },
-  { name: "TypeScript", rating: 4 },
-  { name: "PostgreSQL", rating: 4 },
-  { name: "Node.js", rating: 3 },
-  { name: "Figma / UI", rating: 4 },
-  { name: "Video editing", rating: 3 },
-  { name: "Content writing", rating: 4 },
-].map((s) => ({ ...s, max: 5 }));
+// Dashboard Analitik: kategori sama seperti overlay (Web & Digital, Design, Konten & Kreatif, Lain-lain).
+const ANALITIK_CATEGORIES = [
+  { value: "web_digital", label: "Web & Digital" },
+  { value: "design", label: "Design" },
+  { value: "konten_kreatif", label: "Konten & Kreatif" },
+  { value: "lain_lain", label: "Lain-lain" },
+] as const;
 
 // Parse teks harga Indonesia (e.g. "400 ribu", "1,5 jt") ke angka. Return null jika tidak bisa parse.
 function parsePriceIdr(text: string): number | null {
@@ -99,6 +94,39 @@ function formatCountdown(deadlineRaw: string, nowMs: number): string {
   const core = `${days} hari ${hours} jam ${minutes} menit ${seconds} detik`;
   return passed ? `Lewat ${core}` : `Sisa ${core}`;
 }
+
+/** Build "Add to Google Calendar" URL untuk satu order (deadline + pemesan + layanan). */
+function buildGoogleCalendarUrl(o: OrderItem): string {
+  const title = [o.layanan?.trim(), o.pemesan?.trim()].filter(Boolean).join(" — ") || "Order Layanan";
+  const parts = [
+    `Pemesan: ${o.pemesan || "-"}`,
+    `Layanan: ${o.layanan || "-"}`,
+    o.deskripsi_pekerjaan ? `Deskripsi: ${o.deskripsi_pekerjaan}` : "",
+    o.kesepakatan_brief_uang ? `Kesepakatan: ${o.kesepakatan_brief_uang}` : "",
+    o.mulai_tanggal ? `Mulai: ${formatDateDDMMYYYY(o.mulai_tanggal)}` : "",
+    o.kapan_uang_masuk ? `Uang masuk: ${formatDateDDMMYYYY(o.kapan_uang_masuk)}` : "",
+  ].filter(Boolean);
+  const details = parts.join("\n");
+  const base = "https://calendar.google.com/calendar/render";
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: title,
+    details: details,
+  });
+  const d = parseDeadlineDate(o.deadline);
+  if (d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const start = `${y}${m}${day}`;
+    const endD = new Date(d);
+    endD.setDate(endD.getDate() + 1);
+    const end = `${endD.getFullYear()}${String(endD.getMonth() + 1).padStart(2, "0")}${String(endD.getDate()).padStart(2, "0")}`;
+    params.set("dates", `${start}/${end}`);
+  }
+  return `${base}?${params.toString()}`;
+}
+
 type Service = {
   id: string;
   title: string;
@@ -300,7 +328,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <AdminDashboard />
+        <AdminAnalitik apiUrl={API_URL} adminKey={adminKey} />
         <div className="grid gap-8 xl:grid-cols-2">
           <div className="min-w-0">
             <AdminLayanan apiUrl={API_URL} adminKey={adminKey} />
@@ -317,26 +345,278 @@ export default function AdminPage() {
   );
 }
 
-function AdminDashboard() {
+type AnalitikItemType = {
+  id: string;
+  category: string;
+  name: string;
+  desc: string;
+  order: number;
+  closed: boolean;
+  created_at: string;
+};
+
+function AdminAnalitik({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) {
+  const [items, setItems] = useState<AnalitikItemType[]>([]);
+  const [category, setCategory] = useState(ANALITIK_CATEGORIES[0].value);
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [editing, setEditing] = useState<AnalitikItemType | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editCategory, setEditCategory] = useState(ANALITIK_CATEGORIES[0].value);
+  const [editDesc, setEditDesc] = useState("");
+  const [daftarOpen, setDaftarOpen] = useState(false);
+
+  const headers = (key: string) => ({ "Content-Type": "application/json", "X-Admin-Key": key });
+
+  const fetchList = useCallback(async () => {
+    try {
+      const res = await fetch(`${apiUrl}/api/admin/analitik`, { headers: headers(adminKey) });
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
+      if (data.ok && Array.isArray(data.items)) setItems(data.items);
+    } catch {
+      setItems([]);
+    }
+  }, [apiUrl, adminKey]);
+
+  useEffect(() => {
+    fetchList();
+  }, [fetchList]);
+
+  const add = async () => {
+    if (!name.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/api/admin/analitik`, {
+        method: "POST",
+        headers: headers(adminKey),
+        body: JSON.stringify({ category, name: name.trim(), desc: desc.trim() }),
+      });
+      if (res.ok) {
+        setName("");
+        setDesc("");
+        fetchList();
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const del = async (id: string) => {
+    if (!confirm("Hapus item ini permanen?")) return;
+    const res = await fetch(`${apiUrl}/api/admin/analitik?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: headers(adminKey),
+    });
+    if (res.ok) fetchList();
+  };
+
+  const toggleClose = async (id: string, currentClosed: boolean) => {
+    const res = await fetch(`${apiUrl}/api/admin/analitik/close`, {
+      method: "POST",
+      headers: headers(adminKey),
+      body: JSON.stringify({ id, closed: !currentClosed }),
+    });
+    if (res.ok) fetchList();
+  };
+
+  const openEdit = (it: AnalitikItemType) => {
+    setEditing(it);
+    setEditName(it.name);
+    setEditCategory(it.category);
+    setEditDesc(it.desc);
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    const res = await fetch(`${apiUrl}/api/admin/analitik`, {
+      method: "PUT",
+      headers: headers(adminKey),
+      body: JSON.stringify({
+        id: editing.id,
+        category: editCategory,
+        name: editName.trim(),
+        desc: editDesc.trim(),
+      }),
+    });
+    if (res.ok) {
+      setEditing(null);
+      fetchList();
+    }
+  };
+
+  const categoryLabel = (value: string) => ANALITIK_CATEGORIES.find((c) => c.value === value)?.label ?? value;
+
   return (
-    <section className="mb-8 rounded-xl border border-rasya-border bg-rasya-surface p-5">
-      <h2 className="text-base font-semibold text-white mb-3">Dashboard Analytic</h2>
+    <section className="mb-8 rounded-xl border border-rasya-border bg-rasya-surface p-6">
+      <h2 className="text-lg font-semibold text-white mb-4">Kelola Dashboard Analitik</h2>
       <p className="text-sm text-zinc-400 mb-4">
-        Kemampuan yang bisa dikerjakan — rating skala 5 (bisa disesuaikan di kode).
+        Tambah, tutup/buka, atau hapus item kemampuan (nama + penjelasan). Sama seperti di halaman utama: tidak ada rating, hanya penjelasan. Item yang ditutup tidak tampil di overlay &quot;Penasaran apa yang saya bisa?&quot;.
       </p>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {SKILL_RATINGS.map((s) => (
-          <div
-            key={s.name}
-            className="flex items-center justify-between rounded-lg border border-rasya-border bg-rasya-dark/60 px-3 py-2"
+      <div className="grid gap-3 sm:grid-cols-2 mb-6">
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Nama kemampuan (mis. Frontend Developer)"
+          className="rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white placeholder-zinc-500 focus:border-rasya-accent focus:outline-none"
+        />
+        <div>
+          <label className="block text-xs text-zinc-500 mb-1">Kategori</label>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white focus:border-rasya-accent focus:outline-none"
           >
-            <span className="text-sm text-zinc-200 truncate" title={s.name}>{s.name}</span>
-            <span className="ml-2 shrink-0 text-xs font-medium text-rasya-accent">
-              {s.rating}/{s.max ?? 5}
-            </span>
-          </div>
-        ))}
+            {ANALITIK_CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="sm:col-span-2">
+          <label className="block text-xs text-zinc-500 mb-1">Penjelasan</label>
+          <textarea
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            placeholder="Deskripsi singkat kemampuan (tanpa rating)"
+            rows={2}
+            className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white placeholder-zinc-500 focus:border-rasya-accent focus:outline-none resize-y"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={add}
+          disabled={loading || !name.trim()}
+          className="sm:col-span-2 rounded-lg bg-rasya-accent px-4 py-2 font-medium text-rasya-dark hover:bg-rasya-accent/90 disabled:opacity-50 w-fit"
+        >
+          Tambah
+        </button>
       </div>
+
+      <div className="rounded-lg border border-rasya-border bg-rasya-dark/40 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setDaftarOpen((o) => !o)}
+          className="flex w-full items-center justify-between px-4 py-3 text-left text-sm text-zinc-300 hover:bg-rasya-dark/60 transition"
+          aria-expanded={daftarOpen}
+        >
+          <span>Daftar item analitik: {items.length} item</span>
+          <span className="shrink-0 text-zinc-500" aria-hidden>
+            {daftarOpen ? "▼ Tutup" : "▶ Buka"}
+          </span>
+        </button>
+        {daftarOpen && (
+          <div className="border-t border-rasya-border px-4 pb-4 pt-3">
+            <ul className="space-y-2">
+              {items.map((it) => (
+                <li
+                  key={it.id}
+                  className={`rounded-lg border border-rasya-border p-3 ${it.closed ? "bg-rasya-dark/60 opacity-75" : "bg-rasya-dark"}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className={`font-medium ${it.closed ? "text-zinc-500 line-through" : "text-white"}`}>
+                        {it.name}
+                      </p>
+                      <p className="text-xs text-rasya-accent font-mono mt-0.5">{categoryLabel(it.category)}</p>
+                      {it.desc && (
+                        <p className="text-sm text-zinc-500 mt-1 line-clamp-2">{it.desc}</p>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openEdit(it)}
+                        className="rounded border border-rasya-accent/50 px-2 py-1 text-xs font-medium text-rasya-accent hover:bg-rasya-accent/20"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleClose(it.id, !!it.closed)}
+                        className={`rounded border px-2 py-1 text-xs font-medium ${
+                          it.closed
+                            ? "border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20"
+                            : "border-amber-500/50 text-amber-400 hover:bg-amber-500/20"
+                        }`}
+                      >
+                        {it.closed ? "Buka" : "Tutup"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => del(it.id)}
+                        className="rounded border border-red-500/50 px-2 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+              {items.length === 0 && (
+                <p className="text-sm text-zinc-500 py-2">Belum ada item. Tambah dari form di atas.</p>
+              )}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" aria-modal="true" role="dialog">
+          <div className="w-full max-w-lg rounded-xl border border-rasya-border bg-rasya-surface p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-white mb-4">Edit item: {editing.name}</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-zinc-500 mb-1">Nama</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white focus:border-rasya-accent focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-500 mb-1">Kategori</label>
+                <select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white focus:border-rasya-accent focus:outline-none"
+                >
+                  {ANALITIK_CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-500 mb-1">Penjelasan</label>
+                <textarea
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-white focus:border-rasya-accent focus:outline-none resize-y"
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={saveEdit}
+                  className="rounded-lg bg-rasya-accent px-4 py-2 font-medium text-rasya-dark hover:bg-rasya-accent/90"
+                >
+                  Simpan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditing(null)}
+                  className="rounded-lg border border-rasya-border px-4 py-2 text-zinc-300 hover:bg-rasya-dark"
+                >
+                  Batal
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -889,7 +1169,7 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
     <section className="mb-12 rounded-xl border border-rasya-border bg-rasya-surface p-6">
       <h2 className="text-lg font-semibold text-white mb-4">2. Order Layanan</h2>
       <p className="text-sm text-zinc-400 mb-4">
-        Teknis order: siapa pemesan, apa yang dikerjakan, deadline, mulai, kesepakatan brief (uang), kapan uang masuk. Data dikelompokkan per pemesan agar rapi seperti folder kerja.
+        Teknis order: siapa pemesan, apa yang dikerjakan, deadline, mulai, kesepakatan brief (uang), kapan uang masuk. Data dikelompokkan per pemesan agar rapi seperti folder kerja. Gunakan &quot;Tambah ke Google Calendar&quot; per order agar jadwal sinkron dengan kalender dan mudah penjadwalan dengan client.
       </p>
       <div className="grid gap-3 sm:grid-cols-2 mb-6">
         <div>
@@ -1001,13 +1281,24 @@ function AdminOrder({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
                                 Countdown: {formatCountdown(o.deadline, nowMs)}
                               </p>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => del(o.id)}
-                              className="text-sm text-red-400 hover:text-red-300 shrink-0"
-                            >
-                              Hapus
-                            </button>
+                            <div className="flex flex-wrap items-center gap-2 shrink-0">
+                              <a
+                                href={buildGoogleCalendarUrl(o)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-rasya-accent hover:underline inline-flex items-center gap-1"
+                              >
+                                <span aria-hidden>📅</span>
+                                Tambah ke Google Calendar
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => del(o.id)}
+                                className="text-sm text-red-400 hover:text-red-300"
+                              >
+                                Hapus
+                              </button>
+                            </div>
                           </div>
                           {o.tickets && o.tickets.length > 0 && (
                             <div className="rounded-lg border border-rasya-border/60 bg-rasya-dark/60 p-3">
@@ -1448,7 +1739,16 @@ function AdminPorto({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }) 
               acc.get(t)!.push(p);
               return acc;
             }, new Map()).entries()
-          ).map(([tagName, items]) => (
+          )
+            .sort(([a], [b]) => {
+              const i = SERVICE_TAGS.indexOf(a as typeof SERVICE_TAGS[number]);
+              const j = SERVICE_TAGS.indexOf(b as typeof SERVICE_TAGS[number]);
+              if (i === -1 && j === -1) return a.localeCompare(b);
+              if (i === -1) return 1;
+              if (j === -1) return -1;
+              return i - j;
+            })
+            .map(([tagName, items]) => (
             <div key={tagName} className="rounded-lg border border-rasya-border bg-rasya-dark/30 overflow-hidden">
               <div className="px-4 py-2 border-b border-rasya-border font-mono text-sm font-medium text-rasya-accent">
                 {tagName}

@@ -5,10 +5,51 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
+	"unicode"
 
 	"backend/internal/pdf"
+	"time"
 )
+
+// buildAgreementFilename returns a unique filename: nama pihak kedua (klien) + nomor perjanjian.
+// Example: raisa_002-RP-PJ-I-2026.pdf (slash in nomor replaced with dash for filesystem).
+func buildAgreementFilename(p2Nama, nomorPerjanjian string) string {
+	safeName := strings.Map(func(r rune) rune {
+		if r == ' ' || r == '\t' {
+			return '_'
+		}
+		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-' || r == '_' {
+			return r
+		}
+		if r >= 'A' && r <= 'Z' {
+			return unicode.ToLower(r)
+		}
+		return -1
+	}, strings.TrimSpace(p2Nama))
+	safeName = strings.Trim(safeName, "_")
+	// Nomor: ganti / dengan - (contoh: 002/RP-PJ/I/2026 -> 002-RP-PJ-I-2026)
+	safeNomor := strings.Map(func(r rune) rune {
+		if r == '/' {
+			return '-'
+		}
+		if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_' {
+			return r
+		}
+		return -1
+	}, strings.TrimSpace(nomorPerjanjian))
+	safeNomor = strings.Trim(safeNomor, "-_")
+
+	if safeName != "" && safeNomor != "" {
+		return safeName + "_" + safeNomor + ".pdf"
+	}
+	if safeNomor != "" {
+		return safeNomor + ".pdf"
+	}
+	if safeName != "" {
+		return safeName + "_perjanjian.pdf"
+	}
+	return "perjanjian-jasa-standar.pdf"
+}
 
 // AgreementPDF handles POST /api/admin/agreement/pdf — body JSON AgreementData, returns PDF file.
 func AgreementPDF(w http.ResponseWriter, r *http.Request) {
@@ -69,25 +110,8 @@ func AgreementPDF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Build filename
-	var tierLabel string
-	if strings.ToLower(data.Tier) == "profesional" {
-		tierLabel = "profesional"
-	} else {
-		tierLabel = "standar"
-	}
-	filename := "perjanjian-jasa-" + tierLabel + ".pdf"
-	if data.NomorPerjanjian != "" {
-		safe := strings.Map(func(r rune) rune {
-			if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_' {
-				return r
-			}
-			return -1
-		}, data.NomorPerjanjian)
-		if safe != "" {
-			filename = safe + "-" + tierLabel + ".pdf"
-		}
-	}
+	// Filename unik: nama pihak kedua (klien) + nomor perjanjian (contoh: raisa_002-RP-PJ-I-2026.pdf)
+	filename := buildAgreementFilename(data.P2Nama, data.NomorPerjanjian)
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+"\"")
 	w.Header().Set("Content-Length", strconv.Itoa(len(pdfBytes)))

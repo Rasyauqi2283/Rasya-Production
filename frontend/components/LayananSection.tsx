@@ -6,7 +6,7 @@ import { getServiceDisplay } from "@/lib/serviceI18n";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-const SERVICE_TAGS = ["Design", "Web & Digital", "Konten & Kreatif", "Lain-lain"] as const;
+const SERVICE_TAGS = ["Web & Digital", "Design", "Konten & Kreatif", "Lain-lain"] as const;
 const TAG_KEYS: Record<string, string> = {
   "Design": "tag_design",
   "Web & Digital": "tag_web",
