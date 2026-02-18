@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/Logo_contoh.png",
+        url: "/Logo_sebenarnya.png",
         width: 512,
         height: 512,
         alt: "Logo Rasya Production",
@@ -76,12 +76,12 @@ export const metadata: Metadata = {
     title: "Rasya Production",
     description:
       "Layanan desain, konten kreatif, website, dan solusi digital untuk personal maupun bisnis.",
-    images: ["/Logo_contoh.png"],
+    images: ["/Logo_sebenarnya.png"],
   },
   icons: {
-    icon: "/Logo_contoh.png",
-    shortcut: "/Logo_contoh.png",
-    apple: "/Logo_contoh.png",
+    icon: "/Logo_sebenarnya.png",
+    shortcut: "/Logo_sebenarnya.png",
+    apple: "/Logo_sebenarnya.png",
   },
 };
 

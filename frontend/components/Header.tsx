@@ -1,13 +1,41 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Lang } from "@/lib/translations";
 
+function AnimatedO() {
+  return (
+    <span className="inline-flex items-center align-middle mx-0.5 w-[0.9em] h-[0.9em]">
+      {/* Animated aperture O from logo; eslint ok: decorative SVG with animation */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/Animate_O.svg"
+        alt=""
+        aria-hidden
+        className="w-full h-full object-contain animate-spin"
+        style={{ animationDuration: "4s" }}
+      />
+    </span>
+  );
+}
+
 const LOGO = (
   <>
-    Rasya<span className="text-rasya-accent">.</span>Production
+    <Image
+      src="/Logo_sebenarnya.png"
+      alt="Rasya Production"
+      width={36}
+      height={36}
+      className="mr-2.5 shrink-0 object-contain"
+    />
+    <span className="align-middle">
+      Rasya<span className="text-rasya-accent">.</span>Prod
+      <AnimatedO />
+      uction
+    </span>
   </>
 );
 
@@ -22,14 +50,14 @@ export default function Header() {
         {isHome ? (
           <a
             href="#hero"
-            className="text-xl font-semibold tracking-tight text-white"
+            className="flex items-center text-xl font-semibold tracking-tight text-white"
           >
             {LOGO}
           </a>
         ) : (
           <Link
             href="/"
-            className="text-xl font-semibold tracking-tight text-white"
+            className="flex items-center text-xl font-semibold tracking-tight text-white"
           >
             {LOGO}
           </Link>
