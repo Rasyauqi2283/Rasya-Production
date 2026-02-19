@@ -356,6 +356,7 @@ export default function AdminPage() {
             <AdminOrder apiUrl={API_URL} adminKey={adminKey} />
           </div>
         </div>
+        <AdminPreviewClient />
         <AdminDonasi apiUrl={API_URL} adminKey={adminKey} />
         <AdminPorto apiUrl={API_URL} adminKey={adminKey} />
         <AdminAgreement apiUrl={API_URL} adminKey={adminKey} />
@@ -1083,6 +1084,54 @@ function AdminLayanan({ apiUrl, adminKey }: { apiUrl: string; adminKey: string }
             </div>
           </div>
         </div>
+      )}
+    </section>
+  );
+}
+
+const PREVIEW_CLIENT_KEY = process.env.NEXT_PUBLIC_PREVIEW_CLIENT_KEY || "";
+
+function AdminPreviewClient() {
+  const [copied, setCopied] = useState(false);
+  const previewUrl =
+    typeof window !== "undefined" && PREVIEW_CLIENT_KEY
+      ? `${window.location.origin}/preview-client?k=${encodeURIComponent(PREVIEW_CLIENT_KEY)}`
+      : "";
+
+  const copyLink = () => {
+    if (!previewUrl) return;
+    navigator.clipboard.writeText(previewUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <section className="mb-12 rounded-xl border border-rasya-border bg-rasya-surface p-6">
+      <h2 className="text-lg font-semibold text-white mb-4">Preview untuk client</h2>
+      <p className="text-sm text-zinc-400 mb-4">
+        Link ini hanya bisa diakses oleh orang yang Anda beri link. Tidak muncul di menu publik. Bagikan link ke client untuk melihat preview template layanan.
+      </p>
+      {PREVIEW_CLIENT_KEY ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            type="text"
+            readOnly
+            value={previewUrl}
+            className="flex-1 min-w-0 rounded-lg border border-rasya-border bg-rasya-dark px-4 py-2 text-sm text-zinc-300 font-mono"
+          />
+          <button
+            type="button"
+            onClick={copyLink}
+            className="rounded-lg bg-rasya-accent px-4 py-2 text-sm font-medium text-rasya-dark hover:bg-rasya-accent/90"
+          >
+            {copied ? "Tersalin!" : "Salin link"}
+          </button>
+        </div>
+      ) : (
+        <p className="text-sm text-amber-400">
+          Set <code className="bg-rasya-dark px-1 rounded">NEXT_PUBLIC_PREVIEW_CLIENT_KEY</code> di environment (frontend) untuk mengaktifkan link preview client. Gunakan string rahasia yang panjang (misalnya UUID).
+        </p>
       )}
     </section>
   );
