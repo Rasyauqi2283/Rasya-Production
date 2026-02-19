@@ -2,7 +2,7 @@
 
 export default function AnimatedO() {
   return (
-    <span className="inline-flex items-center justify-center align-middle -mx-[0.32em] -my-[0.25em] w-[1.84em] h-[2em] shrink-0">
+    <span className="inline-flex items-center justify-center align-middle -mx-[0.38em] -my-[0.25em] w-[1.84em] h-[2em] shrink-0">
       {/* Animated aperture O from logo; eslint ok: decorative SVG with animation */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
