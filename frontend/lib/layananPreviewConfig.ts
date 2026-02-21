@@ -19,7 +19,7 @@ export interface PreviewMeta {
 
 /** Preview dengan halaman custom (bukan dynamic [slug]) */
 export const CUSTOM_PREVIEWS: PreviewMeta[] = [
-  { slug: "fitur", title: "Fitur & Demo", description: "Yang Anda dapatkan saat order + demo interaktif (chart real-time, seperti game).", previewType: "web" },
+  { slug: "fitur", title: "Fitur & Demo", description: "Preview slide deck Web & Digital.", previewType: "web" },
   { slug: "game-store", title: "Game Store Theme", description: "Modern storefront concept with featured games and bundles.", previewType: "web" },
   { slug: "montessori", title: "Montessori School Theme", description: "Landing PAUD/TK dengan pendekatan Montessori, kurikulum terintegrasi.", previewType: "web" },
   { slug: "cafe", title: "Cafe Theme", description: "Menu-first landing layout with pricing emphasis.", previewType: "web" },

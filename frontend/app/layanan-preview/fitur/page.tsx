@@ -121,6 +121,9 @@ function ChartDemoContent({
   );
 }
 
+const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "6281234567890";
+const WHATSAPP_PREFILL = "Halo, saya dari Fitur & Demo Rasya Production. Saya ingin diskusi layanan Web & Digital.";
+
 export default function FiturPreviewPage() {
   const [chartData, setChartData] = useState(defaultChartData);
   const maxVal = Math.max(...chartData.map((d) => d.value), 1);
@@ -130,28 +133,59 @@ export default function FiturPreviewPage() {
     setChartData((prev) => prev.map((d, i) => (i === index ? { ...d, value: n } : d)));
   };
 
+  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, "")}?text=${encodeURIComponent(WHATSAPP_PREFILL)}`;
+
   const additionalSlides: ExtraSlide[] = [
     {
-      title: "Struktur organisasi — isi bebas, update real-time",
-      tagline: "Layanan demonstrasi",
+      title: "Bukan sekadar janji. Ini bisa Anda coba sekarang.",
+      tagline: "Demo fitur",
       content: (
         <>
-          <p className="mb-4 text-sm text-zinc-400">
-            Akar (lingkaran profil) dan kotak-kotak di bawah bisa Anda isi bebas. Perubahan langsung terlihat.
+          <p className="mb-6 text-sm text-zinc-400">
+            Silakan coba di bawah: isi struktur organisasi dan ubah nilai chart. Perubahan langsung terlihat — seperti sistem yang Anda dapat setelah order.
           </p>
-          <StrukturOrganisasiDemo />
+          <div className="space-y-10">
+            <div>
+              <p className="mb-3 text-xs font-medium uppercase tracking-wider text-rasya-accent/90">Struktur organisasi</p>
+              <StrukturOrganisasiDemo />
+            </div>
+            <div>
+              <p className="mb-3 text-xs font-medium uppercase tracking-wider text-rasya-accent/90">Chart real-time</p>
+              <ChartDemoContent
+                chartData={chartData}
+                updateValue={updateValue}
+                maxVal={maxVal}
+              />
+            </div>
+          </div>
         </>
       ),
     },
     {
-      title: "Chart isian real-time — seperti game",
-      tagline: "Layanan demonstrasi",
+      title: "Siap membawa bisnis Anda ke level digital berikutnya?",
+      tagline: "Mari kita bangun sistem yang bekerja untuk Anda 24/7.",
       content: (
-        <ChartDemoContent
-          chartData={chartData}
-          updateValue={updateValue}
-          maxVal={maxVal}
-        />
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <div className="mb-8 flex flex-wrap items-center justify-center gap-4">
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-6 py-3 font-medium text-white transition hover:opacity-90"
+            >
+              WhatsApp
+            </a>
+            <Link
+              href="/#contact"
+              className="inline-flex items-center gap-2 rounded-lg border border-rasya-border bg-rasya-surface px-6 py-3 font-medium text-zinc-200 transition hover:border-rasya-accent/50 hover:text-white"
+            >
+              Hubungi via situs
+            </Link>
+          </div>
+          <p className="text-xs text-zinc-500">
+            Call to action jelas — langkah berikutnya ada di tangan Anda.
+          </p>
+        </div>
       ),
     },
   ];
@@ -169,13 +203,7 @@ export default function FiturPreviewPage() {
 
         <header className="mt-6 mb-8">
           <p className="mb-1.5 font-mono text-xs uppercase tracking-widest text-rasya-accent">
-            Fitur
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
-            Yang Anda dapatkan jika order jasa saya
-          </h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
-            Nilai jual utama dan demo interaktif. Pilih slide dari dropdown di bawah, atau gunakan tombol kiri/kanan.
+            Fitur & Demo — Web & Digital
           </p>
         </header>
 

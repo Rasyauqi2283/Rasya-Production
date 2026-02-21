@@ -4,50 +4,61 @@ import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 /**
- * Final draft deck: Fitur & Demo = keseluruhan slide yang didapat jika order layanan Web & Digital.
- * Struktur: Intro → Nilai jual → Bab 1 (Web & Digital) → Frontend → Backend → Fullstack → WordPress → Mobile apps. Tanpa penutup.
+ * 10 slide yang lebih tajam & menjual — outcome-driven, benefit-focused.
+ * Struktur: Intro hook → Nilai jual (manfaat) → Web & Digital (positioning + 3 pilar) → 5 solusi → Demo → Closing CTA.
  */
 const fiturSlides = [
   {
-    title: "Yang Anda dapatkan jika order jasa saya",
+    title: "Website yang bukan hanya online — tapi menghasilkan.",
     tagline: "Intro",
-    desc: "Satu deck ini merangkum apa saja yang Anda dapat ketika mengambil layanan Web & Digital: dari nilai jual, struktur layanan (frontend, backend, fullstack, WordPress, mobile), hingga demo interaktif.",
+    desc: "Saya membantu bisnis mengubah traffic menjadi leads, dan leads menjadi revenue lewat sistem digital yang terukur dan scalable.\nKarena di era ini, yang bertahan bukan yang punya website — tapi yang punya sistem.",
   },
   {
-    title: "Nilai jual utama",
+    title: "Nilai jual — fokus ke manfaat, bukan sekadar fitur",
     tagline: "Nilai jual",
-    desc: "Website responsif (satu website, semua layar). ROI & efisiensi biaya. Siap konversi & monetisasi (CTA, form, WhatsApp). SEO & visibilitas. Analitik untuk keputusan bisnis. Export data ke Excel, PDF tinggal klik. Struktur organisasi lewat UI. Konten & copywriting. Revisi terstruktur. Hosting & domain. Source code & hak milik.",
+    listItems: [
+      "Meningkatkan kredibilitas bisnis",
+      "Meningkatkan konversi & leads",
+      "Otomatisasi proses bisnis",
+      "Data untuk keputusan strategis",
+      "Skalabilitas jangka panjang",
+    ],
+    listFootnote: "Website responsif, SEO, hosting, source code sebagai fondasi teknis.",
   },
   {
-    title: "Web & Digital",
-    tagline: "Bab 1",
-    desc: "Layanan pembangunan website dan aplikasi web. Berikut sekat layanan: Frontend, Backend, Fullstack, WordPress, Mobile apps.",
+    title: "Saya tidak hanya membuat website. Saya membangun sistem digital untuk bisnis Anda.",
+    tagline: "Web & Digital",
+    listItems: [
+      "Visibility — SEO & Branding",
+      "Conversion — CTA, Form, WhatsApp, Funnel",
+      "Automation — Dashboard, Export, Analytics",
+    ],
     isSekat: true,
   },
   {
     title: "Frontend",
-    tagline: "Bab 1 — Web & Digital",
-    desc: "Tampilan dan interaksi di browser: markup, styling, logic di sisi client. Website atau aplikasi web yang responsif dan aksesibel. Mulai dari landing page hingga antarmuka aplikasi.",
+    tagline: "Solusi",
+    desc: "Fokus pada User Experience → meningkatkan trust & waktu kunjungan. Tampil rapi di semua device, aksesibel, dan mengarahkan visitor ke aksi yang Anda mau.",
   },
   {
     title: "Backend",
-    tagline: "Bab 1 — Web & Digital",
-    desc: "Server, API, dan logika di belakang layar: REST/API, database, autentikasi, integrasi pihak ketiga. Fondasi yang aman dan skalabel.",
+    tagline: "Solusi",
+    desc: "Fokus pada keamanan, performa, dan stabilitas sistem. Data aman, API andal, siap tumbuh seiring bisnis Anda.",
   },
   {
     title: "Fullstack",
-    tagline: "Bab 1 — Web & Digital",
-    desc: "Frontend dan backend dalam satu proyek: database, API, dan antarmuka pengguna dari awal sampai deploy. Satu tim, satu alur.",
+    tagline: "Solusi",
+    desc: "Fokus pada efisiensi biaya & komunikasi lebih cepat. Satu tim, satu alur — dari konsep sampai deploy tanpa putus koordinasi.",
   },
   {
     title: "WordPress",
-    tagline: "Bab 1 — Web & Digital",
-    desc: "Situs berbasis WordPress: setup tema, plugin, custom layout, integrasi konten. Cepat online dan mudah dikelola client.",
+    tagline: "Solusi",
+    desc: "Fokus pada cepat live, mudah dikelola, cocok UMKM. Online dalam hitungan hari, Anda bisa update konten sendiri.",
   },
   {
     title: "Mobile apps",
-    tagline: "Bab 1 — Web & Digital",
-    desc: "Aplikasi Android dan/atau iOS: UI, logic, integrasi API. Siap dipakai atau diunggah ke Play Store / App Store.",
+    tagline: "Solusi",
+    desc: "Fokus pada engagement lebih tinggi & loyalitas pelanggan. Aplikasi Android/iOS yang membuat pelanggan tetap terhubung dengan brand Anda.",
   },
 ];
 
@@ -61,6 +72,8 @@ type SlideItem = {
   title: string;
   tagline?: string;
   desc?: string;
+  listItems?: string[];
+  listFootnote?: string;
   content?: ReactNode;
   isSekat?: boolean;
 };
@@ -130,72 +143,97 @@ export default function FiturLayananSlider({
             <article
               key={i}
               data-slide={i}
-              className="relative flex min-h-[420px] min-w-full max-w-full shrink-0 flex-col snap-center snap-always overflow-hidden rounded-sm border-2 border-zinc-700/80 bg-gradient-to-b from-zinc-900/95 to-rasya-dark px-8 py-12 shadow-[inset_0_1px_0_0_rgba(234,179,8,0.08),inset_0_0_0_1px_rgba(255,255,255,0.03)] md:min-h-[480px] md:px-12 md:py-14"
+              className="relative flex min-h-[260px] max-h-[58vh] min-w-full max-w-full shrink-0 flex-col snap-center snap-always overflow-hidden rounded-sm border-2 border-zinc-700/80 bg-gradient-to-b from-zinc-900/95 to-rasya-dark px-6 py-5 shadow-[inset_0_1px_0_0_rgba(234,179,8,0.08),inset_0_0_0_1px_rgba(255,255,255,0.03)] md:min-h-[300px] md:max-h-[62vh] md:px-8 md:py-6"
             >
               {/* Ornate top border accent */}
-              <div className="mb-6 h-px w-full bg-gradient-to-r from-transparent via-rasya-accent/50 to-transparent" />
+              <div className="mb-3 h-px w-full bg-gradient-to-r from-transparent via-rasya-accent/50 to-transparent" />
               {slide.isSekat ? (
-                <div className="flex flex-col items-center justify-center text-center">
+                <div className="flex flex-1 min-h-0 flex-col items-center justify-center text-center">
                   {slide.tagline && (
-                    <p className="mb-2 font-mono text-xs uppercase tracking-[0.3em] text-rasya-accent/90">
+                    <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.25em] text-rasya-accent/90">
                       {slide.tagline}
                     </p>
                   )}
-                  <h3 className="font-gothic text-2xl font-medium tracking-wide text-zinc-100 md:text-4xl md:tracking-wider">
+                  <h3 className="font-gothic text-lg font-medium tracking-wide text-zinc-100 md:text-2xl md:tracking-wider">
                     {slide.title}
                   </h3>
-                  {slide.desc && (
-                    <p className="mt-4 max-w-xl font-display text-sm leading-relaxed text-zinc-400">
+                  {slide.listItems && slide.listItems.length > 0 ? (
+                    <ul className="mt-2 list-none space-y-1 text-left font-display text-sm text-zinc-300 md:text-base">
+                      {slide.listItems.map((item, idx) => (
+                        <li key={idx} className="flex items-center gap-2">
+                          <span className="text-rasya-accent" aria-hidden>✔</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : slide.desc ? (
+                    <p className="mt-2 max-w-xl font-display text-sm leading-relaxed text-zinc-400">
                       {slide.desc}
                     </p>
-                  )}
+                  ) : null}
                 </div>
               ) : (
-                <>
+                <div className="flex min-h-0 flex-1 flex-col">
                   {slide.tagline && (
-                    <p className="mb-3 font-mono text-[11px] font-medium uppercase tracking-[0.35em] text-rasya-accent/90">
+                    <p className="mb-1 font-mono text-[10px] font-medium uppercase tracking-[0.3em] text-rasya-accent/90">
                       — {slide.tagline} —
                     </p>
                   )}
-                  <h3 className="font-gothic mb-5 text-xl font-medium tracking-wide text-zinc-100 md:text-2xl md:tracking-wider">
+                  <h3 className="font-gothic mb-2 text-base font-medium tracking-wide text-zinc-100 md:text-lg md:tracking-wider">
                     {slide.title}
                   </h3>
                   {/* Decorative divider */}
-                  <div className="mb-6 flex items-center gap-3">
+                  <div className="mb-2 flex items-center gap-3">
                     <span className="h-px flex-1 bg-zinc-600/60" />
                     <span className="text-rasya-accent/60" aria-hidden>◆</span>
                     <span className="h-px flex-1 bg-zinc-600/60" />
                   </div>
                   {slide.content != null ? (
-                    <div className="mt-4">{slide.content}</div>
-                  ) : (
-                    <p className="max-w-2xl font-display text-base leading-relaxed text-zinc-400 md:text-lg">
-                      {slide.desc}
-                    </p>
-                  )}
-                </>
+                    <div className="min-h-0 flex-1 overflow-y-auto">{slide.content}</div>
+                  ) : slide.listItems && slide.listItems.length > 0 ? (
+                    <div className="min-h-0 flex-1">
+                      <ul className="list-none space-y-1 font-display text-sm text-zinc-300 md:text-base">
+                        {slide.listItems.map((item, idx) => (
+                          <li key={idx} className="flex items-center gap-2">
+                            <span className="shrink-0 text-rasya-accent" aria-hidden>✔</span>
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                      {slide.listFootnote && (
+                        <p className="mt-2 text-xs text-zinc-500">{slide.listFootnote}</p>
+                      )}
+                    </div>
+                  ) : slide.desc ? (
+                    <div className="max-w-2xl space-y-2 font-display text-sm leading-relaxed text-zinc-400 md:text-base">
+                      {slide.desc.split("\n").map((p, idx) => (
+                        <p key={idx}>{p}</p>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               )}
               {/* Garis kuning tipis + tombol kanan/kiri di dalam slide, di bawah konten */}
-              <div className="mt-auto pt-8">
-                <div className="mb-4 h-px w-full bg-gradient-to-r from-transparent via-rasya-accent/50 to-transparent" />
-                <div className="flex items-center justify-center gap-4">
+              <div className="mt-auto shrink-0 pt-2">
+                <div className="mb-2 h-px w-full bg-gradient-to-r from-transparent via-rasya-accent/50 to-transparent" />
+                <div className="flex items-center justify-center gap-3">
                   <button
                     type="button"
                     onClick={() => scrollTo(activeIndex - 1)}
                     disabled={activeIndex === 0}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border-2 border-zinc-600/80 bg-zinc-900/80 text-xl text-zinc-300 transition hover:border-rasya-accent/60 hover:text-rasya-accent disabled:opacity-40 disabled:hover:border-zinc-600/80 disabled:hover:text-zinc-300"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border-2 border-zinc-600/80 bg-zinc-900/80 text-base text-zinc-300 transition hover:border-rasya-accent/60 hover:text-rasya-accent disabled:opacity-40 disabled:hover:border-zinc-600/80 disabled:hover:text-zinc-300"
                     aria-label="Slide sebelumnya"
                   >
                     ←
                   </button>
-                  <span className="font-gothic min-w-[4rem] text-center text-sm tracking-wide text-zinc-500">
+                  <span className="font-gothic min-w-[3rem] text-center text-xs tracking-wide text-zinc-500">
                     {activeIndex + 1} / {total}
                   </span>
                   <button
                     type="button"
                     onClick={() => scrollTo(activeIndex + 1)}
                     disabled={activeIndex === total - 1}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border-2 border-zinc-600/80 bg-zinc-900/80 text-xl text-zinc-300 transition hover:border-rasya-accent/60 hover:text-rasya-accent disabled:opacity-40 disabled:hover:border-zinc-600/80 disabled:hover:text-zinc-300"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border-2 border-zinc-600/80 bg-zinc-900/80 text-base text-zinc-300 transition hover:border-rasya-accent/60 hover:text-rasya-accent disabled:opacity-40 disabled:hover:border-zinc-600/80 disabled:hover:text-zinc-300"
                     aria-label="Slide berikutnya"
                   >
                     →

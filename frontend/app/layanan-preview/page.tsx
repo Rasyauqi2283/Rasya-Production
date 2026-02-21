@@ -1,14 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   PREVIEW_LANE_TAGS,
   FITUR_PREVIEW,
   THEME_PREVIEWS,
   getPreviewsByTag,
-  getFiturDemoOptionsByCategory,
   type PreviewMeta,
 } from "@/lib/layananPreviewConfig";
 
@@ -28,24 +26,12 @@ function PreviewCard({ item }: { item: PreviewMeta }) {
 }
 
 export default function LayananPreviewIndexPage() {
-  const router = useRouter();
   const [laneId, setLaneId] = useState<string>(PREVIEW_LANE_TAGS[0]);
-  const [fiturDemoOpen, setFiturDemoOpen] = useState(false);
-  const [fiturKategori, setFiturKategori] = useState<string>("");
-  const [fiturPreview, setFiturPreview] = useState<string>("");
 
   const webDigitalServices = getPreviewsByTag("Web & Digital");
   const designPreviews = getPreviewsByTag("Design");
   const kontenPreviews = getPreviewsByTag("Konten & Kreatif");
   const lainPreviews = getPreviewsByTag("Lain-lain");
-
-  const fiturDemoOptions = getFiturDemoOptionsByCategory(fiturKategori);
-
-  const handleFiturDemoGo = () => {
-    if (fiturPreview) {
-      router.push(`/layanan-preview/${fiturPreview}`);
-    }
-  };
 
   return (
     <main className="min-h-screen bg-rasya-dark px-6 pb-20 pt-28">
@@ -88,92 +74,19 @@ export default function LayananPreviewIndexPage() {
         {/* Konten per lane */}
         {laneId === "Web & Digital" && (
           <div className="space-y-10">
-            {/* Paling atas: Fitur & Demo — klik buka panel dropdown (kategori → preview) */}
+            {/* Paling atas: Fitur & Demo — cukup satu link */}
             <section aria-label="Fitur & Demo">
               <h2 className="mb-4 font-mono text-xs uppercase tracking-wider text-rasya-accent">
                 Fitur & Demo
               </h2>
-              <div className="rounded-2xl border-2 border-rasya-accent/40 bg-rasya-surface p-6">
-                <button
-                  type="button"
-                  onClick={() => setFiturDemoOpen((o) => !o)}
-                  className="flex w-full items-center justify-between text-left"
-                >
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">
-                      {FITUR_PREVIEW.title}
-                    </h3>
-                    <p className="mt-1 text-sm text-zinc-400">{FITUR_PREVIEW.description}</p>
-                  </div>
-                  <span className="text-rasya-accent" aria-hidden>
-                    {fiturDemoOpen ? "▼" : "▶"}
-                  </span>
-                </button>
-
-                {fiturDemoOpen && (
-                  <div className="mt-6 space-y-4 border-t border-rasya-border pt-6">
-                    <p className="text-xs text-zinc-500">
-                      Pilih kategori lalu pilih preview. Web & Digital: Fitur & Demo slide, 4 theme, dan 7 layanan. Kategori lain menyusul.
-                    </p>
-                    <div className="flex flex-wrap items-end gap-4">
-                      <div className="min-w-[180px]">
-                        <label htmlFor="fitur-kategori" className="mb-1 block text-xs text-zinc-400">
-                          Kategori
-                        </label>
-                        <select
-                          id="fitur-kategori"
-                          value={fiturKategori}
-                          onChange={(e) => {
-                            setFiturKategori(e.target.value);
-                            setFiturPreview("");
-                          }}
-                          className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-3 py-2 text-sm text-white focus:border-rasya-accent focus:outline-none"
-                        >
-                          <option value="">Pilih kategori</option>
-                          {PREVIEW_LANE_TAGS.map((tag) => (
-                            <option key={tag} value={tag}>
-                              {tag}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="min-w-[220px]">
-                        <label htmlFor="fitur-preview" className="mb-1 block text-xs text-zinc-400">
-                          Preview
-                        </label>
-                        <select
-                          id="fitur-preview"
-                          value={fiturPreview}
-                          onChange={(e) => setFiturPreview(e.target.value)}
-                          disabled={!fiturKategori}
-                          className="w-full rounded-lg border border-rasya-border bg-rasya-dark px-3 py-2 text-sm text-white focus:border-rasya-accent focus:outline-none disabled:opacity-50"
-                        >
-                          <option value="">
-                            {fiturKategori === "Web & Digital"
-                              ? "Pilih preview"
-                              : fiturKategori
-                                ? "Segera hadir"
-                                : "Pilih kategori dulu"}
-                          </option>
-                          {fiturDemoOptions.map((opt) => (
-                            <option key={opt.slug} value={opt.slug}>
-                              {opt.title}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleFiturDemoGo}
-                        disabled={!fiturPreview}
-                        className="rounded-lg bg-rasya-accent px-4 py-2 text-sm font-medium text-rasya-dark transition hover:bg-rasya-accent/90 disabled:opacity-50"
-                      >
-                        Buka preview
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <Link
+                href={`/layanan-preview/${FITUR_PREVIEW.slug}`}
+                className="block rounded-2xl border-2 border-rasya-accent/40 bg-rasya-surface p-6 transition hover:border-rasya-accent"
+              >
+                <h3 className="text-xl font-semibold text-white">{FITUR_PREVIEW.title}</h3>
+                <p className="mt-1 text-sm text-zinc-400">{FITUR_PREVIEW.description}</p>
+                <span className="mt-3 inline-block text-xs font-medium text-rasya-accent">Buka preview →</span>
+              </Link>
             </section>
 
             {/* Badge: 4 theme */}
