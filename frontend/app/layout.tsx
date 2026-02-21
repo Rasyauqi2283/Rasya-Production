@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Outfit, JetBrains_Mono } from "next/font/google";
+import { Outfit, JetBrains_Mono, Cinzel } from "next/font/google";
 import { LanguageProvider } from "@/context/LanguageContext";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import Footer from "@/components/Footer";
@@ -19,6 +19,12 @@ const outfit = Outfit({
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-body",
+  display: "swap",
+});
+
+const cinzel = Cinzel({
+  subsets: ["latin"],
+  variable: "--font-gothic",
   display: "swap",
 });
 
@@ -98,7 +104,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${outfit.variable} ${jetbrainsMono.variable}`}
+      className={`${outfit.variable} ${jetbrainsMono.variable} ${cinzel.variable}`}
     >
       <body className="min-h-screen font-display">
         {isMaintenance ? (

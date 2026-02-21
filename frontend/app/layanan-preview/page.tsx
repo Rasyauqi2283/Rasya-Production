@@ -2,6 +2,11 @@ import Link from "next/link";
 
 const previews = [
   {
+    slug: "fitur",
+    title: "Fitur & Demo",
+    desc: "Yang Anda dapatkan saat order + demo interaktif (chart real-time, seperti game).",
+  },
+  {
     slug: "game-store",
     title: "Game Store Theme",
     desc: "Modern storefront concept with featured games and bundles.",
@@ -38,10 +43,10 @@ export default function LayananPreviewIndexPage() {
         </p>
         <h1 className="mb-3 text-4xl font-bold text-white">Preview template layanan</h1>
         <p className="mb-10 max-w-2xl text-zinc-400">
-          Pilih tema untuk melihat desain preview. Template bisa ditambah untuk Web & Digital, Design, Konten, dan lainnya.
+          Pilih tema untuk melihat desain preview, atau buka Fitur & Demo untuk lihat yang Anda dapatkan + coba demo interaktif.
         </p>
 
-        <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
           {previews.map((item) => (
             <Link
               key={item.slug}
