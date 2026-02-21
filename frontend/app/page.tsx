@@ -65,6 +65,9 @@ export default function Home() {
           <p className="mx-auto max-w-xl text-lg text-zinc-400">
             {t("hero_subtitle")}
           </p>
+          <p className="mt-2 text-sm text-zinc-500">
+            Raspro — raspro.online
+          </p>
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             <a
               href="#contact"

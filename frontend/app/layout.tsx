@@ -28,15 +28,19 @@ const cinzel = Cinzel({
   display: "swap",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://raspro.online";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  metadataBase: new URL(siteUrl),
   title: {
-    default: "Rasya Production",
-    template: "%s | Rasya Production",
+    default: "Raspro | Rasya Production — Desain, Konten & Website",
+    template: "%s | Raspro — Rasya Production",
   },
   description:
-    "Rasya Production — layanan desain, konten kreatif, website, dan solusi digital untuk personal maupun bisnis.",
+    "Raspro (raspro.online) — Rasya Production. Layanan desain, konten kreatif, website, dan solusi digital untuk personal maupun bisnis.",
   keywords: [
+    "raspro",
+    "raspro.online",
     "Rasya Production",
     "jasa desain",
     "jasa website",
@@ -49,7 +53,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
-  authors: [{ name: "Rasya Production" }],
+  authors: [{ name: "Rasya Production" }, { name: "Raspro" }],
   creator: "Rasya Production",
   publisher: "Rasya Production",
   robots: isMaintenance
@@ -66,11 +70,11 @@ export const metadata: Metadata = {
         },
       },
   openGraph: {
-    title: "Rasya Production",
+    title: "Raspro | Rasya Production — Desain, Konten & Website",
     description:
-      "Layanan desain, konten kreatif, website, dan solusi digital untuk personal maupun bisnis.",
+      "Raspro (raspro.online) — Rasya Production. Layanan desain, konten kreatif, website, dan solusi digital.",
     url: "/",
-    siteName: "Rasya Production",
+    siteName: "Raspro — Rasya Production",
     locale: "id_ID",
     type: "website",
     images: [
@@ -78,15 +82,15 @@ export const metadata: Metadata = {
         url: "/Logo_sebenarnya.png",
         width: 512,
         height: 512,
-        alt: "Logo Rasya Production",
+        alt: "Logo Raspro — Rasya Production",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Rasya Production",
+    title: "Raspro | Rasya Production — Desain, Konten & Website",
     description:
-      "Layanan desain, konten kreatif, website, dan solusi digital untuk personal maupun bisnis.",
+      "Raspro (raspro.online) — Rasya Production. Layanan desain, konten kreatif, website, dan solusi digital.",
     images: ["/Logo_sebenarnya.png"],
   },
   icons: {
@@ -94,6 +98,17 @@ export const metadata: Metadata = {
     shortcut: "/Logo_sebenarnya.png",
     apple: "/Logo_sebenarnya.png",
   },
+};
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Rasya Production",
+  alternateName: ["Raspro", "raspro.online"],
+  url: siteUrl,
+  logo: `${siteUrl}/Logo_sebenarnya.png`,
+  description:
+    "Raspro — Rasya Production. Layanan desain, konten kreatif, website, dan solusi digital untuk personal maupun bisnis.",
 };
 
 export default function RootLayout({
@@ -107,6 +122,10 @@ export default function RootLayout({
       className={`${outfit.variable} ${jetbrainsMono.variable} ${cinzel.variable}`}
     >
       <body className="min-h-screen font-display">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         {isMaintenance ? (
           <MaintenancePage />
         ) : (
