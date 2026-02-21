@@ -3,55 +3,51 @@
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+/**
+ * Final draft deck: Fitur & Demo = keseluruhan slide yang didapat jika order layanan Web & Digital.
+ * Struktur: Intro → Nilai jual → Bab 1 (Web & Digital) → Frontend → Backend → Fullstack → WordPress → Mobile apps. Tanpa penutup.
+ */
 const fiturSlides = [
   {
-    title: "Website responsif",
-    tagline: "Nilai jual utama",
-    desc: "Tampil optimal di desktop, tablet, dan ponsel. Siap dipakai di berbagai device tanpa perlu dua versi terpisah. Satu website, semua layar.",
+    title: "Yang Anda dapatkan jika order jasa saya",
+    tagline: "Intro",
+    desc: "Satu deck ini merangkum apa saja yang Anda dapat ketika mengambil layanan Web & Digital: dari nilai jual, struktur layanan (frontend, backend, fullstack, WordPress, mobile), hingga demo interaktif.",
   },
   {
-    title: "ROI & efisiensi biaya",
-    desc: "Satu investasi untuk aset digital jangka panjang. Kurangi biaya marketing yang tidak terarah; website jadi hub informasi dan konversi yang Anda kendalikan sendiri.",
+    title: "Nilai jual utama",
+    tagline: "Nilai jual",
+    desc: "Website responsif (satu website, semua layar). ROI & efisiensi biaya. Siap konversi & monetisasi (CTA, form, WhatsApp). SEO & visibilitas. Analitik untuk keputusan bisnis. Export data ke Excel, PDF tinggal klik. Struktur organisasi lewat UI. Konten & copywriting. Revisi terstruktur. Hosting & domain. Source code & hak milik.",
   },
   {
-    title: "Siap konversi & monetisasi",
-    desc: "CTA jelas, form kontak, link WhatsApp, atau tombol order — dirancang agar pengunjung gampang jadi lead atau pelanggan. Siap terima inquiry dan transaksi.",
+    title: "Web & Digital",
+    tagline: "Bab 1",
+    desc: "Layanan pembangunan website dan aplikasi web. Berikut sekat layanan: Frontend, Backend, Fullstack, WordPress, Mobile apps.",
+    isSekat: true,
   },
   {
-    title: "SEO & visibilitas",
-    desc: "Optimasi dasar agar website bisa muncul di pencarian Google. Calon pelanggan yang cari layanan Anda lebih gampang menemukan bisnis Anda.",
+    title: "Frontend",
+    tagline: "Bab 1 — Web & Digital",
+    desc: "Tampilan dan interaksi di browser: markup, styling, logic di sisi client. Website atau aplikasi web yang responsif dan aksesibel. Mulai dari landing page hingga antarmuka aplikasi.",
   },
   {
-    title: "Analitik untuk keputusan bisnis",
-    desc: "Lihat jumlah pengunjung, sumber traffic, dan perilaku (sesuai kebutuhan). Data sederhana untuk evaluasi marketing dan pengambilan keputusan.",
+    title: "Backend",
+    tagline: "Bab 1 — Web & Digital",
+    desc: "Server, API, dan logika di belakang layar: REST/API, database, autentikasi, integrasi pihak ketiga. Fondasi yang aman dan skalabel.",
   },
   {
-    title: "Export data ke Excel",
-    desc: "Angka dan data dari website bisa ditarik langsung menjadi file Excel. Praktis untuk laporan, rekap, atau analisis lanjutan tanpa copy-paste manual.",
+    title: "Fullstack",
+    tagline: "Bab 1 — Web & Digital",
+    desc: "Frontend dan backend dalam satu proyek: database, API, dan antarmuka pengguna dari awal sampai deploy. Satu tim, satu alur.",
   },
   {
-    title: "Pembuatan dokumen (PDF) tinggal klik",
-    desc: "Hasilkan dokumen siap cetak atau kirim — brosur, katalog, laporan — dalam format PDF dengan satu klik. PDF creator terintegrasi sesuai kebutuhan Anda.",
+    title: "WordPress",
+    tagline: "Bab 1 — Web & Digital",
+    desc: "Situs berbasis WordPress: setup tema, plugin, custom layout, integrasi konten. Cepat online dan mudah dikelola client.",
   },
   {
-    title: "Struktur organisasi lewat UI",
-    desc: "Section, urutan, dan tampilan konten bisa Anda sesuaikan lewat antarmuka — tanpa mengubah backend. Perubahan langsung (real-time). Coba demo di slide berikutnya.",
-  },
-  {
-    title: "Konten & copywriting",
-    desc: "Saya bantu isi konten atau siapkan struktur agar Anda bisa isi sendiri. Copy bisa disesuaikan dengan nada brand Anda.",
-  },
-  {
-    title: "Revisi terstruktur",
-    desc: "Proses revisi jelas: putaran feedback terarah sehingga hasil final sesuai kesepakatan tanpa bolak-balik tidak terarah.",
-  },
-  {
-    title: "Hosting & domain",
-    desc: "Panduan deploy dan pengaturan domain. Bisa dibantu sampai online atau Anda kelola sendiri dengan dokumentasi yang saya berikan.",
-  },
-  {
-    title: "Source code & hak milik",
-    desc: "Setelah selesai, Anda dapat source code dan hak atas website. Transparan dan siap dikembangkan lagi bila perlu.",
+    title: "Mobile apps",
+    tagline: "Bab 1 — Web & Digital",
+    desc: "Aplikasi Android dan/atau iOS: UI, logic, integrasi API. Siap dipakai atau diunggah ke Play Store / App Store.",
   },
 ];
 
@@ -66,6 +62,7 @@ type SlideItem = {
   tagline?: string;
   desc?: string;
   content?: ReactNode;
+  isSekat?: boolean;
 };
 
 export default function FiturLayananSlider({
@@ -77,7 +74,7 @@ export default function FiturLayananSlider({
   const [activeIndex, setActiveIndex] = useState(0);
 
   const slides: SlideItem[] = [
-    ...fiturSlides.map((s) => ({ ...s })),
+    ...fiturSlides.map((s) => ({ ...s, isSekat: (s as SlideItem).isSekat })),
     ...additionalSlides.map((s) => ({
       title: s.title,
       tagline: s.tagline,
@@ -118,31 +115,6 @@ export default function FiturLayananSlider({
       </div>
 
       <div className="relative -mx-2 md:-mx-4">
-        {/* Tombol kiri/kanan ala PPT */}
-        <div className="mb-4 flex items-center justify-center gap-4">
-          <button
-            type="button"
-            onClick={() => scrollTo(activeIndex - 1)}
-            disabled={activeIndex === 0}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border-2 border-zinc-600/80 bg-zinc-900/80 text-xl text-zinc-300 transition hover:border-rasya-accent/60 hover:text-rasya-accent disabled:opacity-40 disabled:hover:border-zinc-600/80 disabled:hover:text-zinc-300"
-            aria-label="Slide sebelumnya"
-          >
-            ←
-          </button>
-          <span className="font-gothic min-w-[4rem] text-center text-sm tracking-wide text-zinc-500">
-            {activeIndex + 1} / {total}
-          </span>
-          <button
-            type="button"
-            onClick={() => scrollTo(activeIndex + 1)}
-            disabled={activeIndex === total - 1}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border-2 border-zinc-600/80 bg-zinc-900/80 text-xl text-zinc-300 transition hover:border-rasya-accent/60 hover:text-rasya-accent disabled:opacity-40 disabled:hover:border-zinc-600/80 disabled:hover:text-zinc-300"
-            aria-label="Slide berikutnya"
-          >
-            →
-          </button>
-        </div>
-
         <div
           ref={scrollRef}
           className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth px-2 md:px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -158,31 +130,78 @@ export default function FiturLayananSlider({
             <article
               key={i}
               data-slide={i}
-              className="relative min-w-full max-w-full shrink-0 snap-center snap-always overflow-hidden rounded-sm border-2 border-zinc-700/80 bg-gradient-to-b from-zinc-900/95 to-rasya-dark px-8 py-12 shadow-[inset_0_1px_0_0_rgba(234,179,8,0.08),inset_0_0_0_1px_rgba(255,255,255,0.03)] md:px-12 md:py-14"
+              className="relative flex min-h-[420px] min-w-full max-w-full shrink-0 flex-col snap-center snap-always overflow-hidden rounded-sm border-2 border-zinc-700/80 bg-gradient-to-b from-zinc-900/95 to-rasya-dark px-8 py-12 shadow-[inset_0_1px_0_0_rgba(234,179,8,0.08),inset_0_0_0_1px_rgba(255,255,255,0.03)] md:min-h-[480px] md:px-12 md:py-14"
             >
               {/* Ornate top border accent */}
               <div className="mb-6 h-px w-full bg-gradient-to-r from-transparent via-rasya-accent/50 to-transparent" />
-              {slide.tagline && (
-                <p className="mb-3 font-mono text-[11px] font-medium uppercase tracking-[0.35em] text-rasya-accent/90">
-                  — {slide.tagline} —
-                </p>
-              )}
-              <h3 className="font-gothic mb-5 text-xl font-medium tracking-wide text-zinc-100 md:text-2xl md:tracking-wider">
-                {slide.title}
-              </h3>
-              {/* Decorative divider */}
-              <div className="mb-6 flex items-center gap-3">
-                <span className="h-px flex-1 bg-zinc-600/60" />
-                <span className="text-rasya-accent/60" aria-hidden>◆</span>
-                <span className="h-px flex-1 bg-zinc-600/60" />
-              </div>
-              {slide.content != null ? (
-                <div className="mt-4">{slide.content}</div>
+              {slide.isSekat ? (
+                <div className="flex flex-col items-center justify-center text-center">
+                  {slide.tagline && (
+                    <p className="mb-2 font-mono text-xs uppercase tracking-[0.3em] text-rasya-accent/90">
+                      {slide.tagline}
+                    </p>
+                  )}
+                  <h3 className="font-gothic text-2xl font-medium tracking-wide text-zinc-100 md:text-4xl md:tracking-wider">
+                    {slide.title}
+                  </h3>
+                  {slide.desc && (
+                    <p className="mt-4 max-w-xl font-display text-sm leading-relaxed text-zinc-400">
+                      {slide.desc}
+                    </p>
+                  )}
+                </div>
               ) : (
-                <p className="max-w-2xl font-display text-base leading-relaxed text-zinc-400 md:text-lg">
-                  {slide.desc}
-                </p>
+                <>
+                  {slide.tagline && (
+                    <p className="mb-3 font-mono text-[11px] font-medium uppercase tracking-[0.35em] text-rasya-accent/90">
+                      — {slide.tagline} —
+                    </p>
+                  )}
+                  <h3 className="font-gothic mb-5 text-xl font-medium tracking-wide text-zinc-100 md:text-2xl md:tracking-wider">
+                    {slide.title}
+                  </h3>
+                  {/* Decorative divider */}
+                  <div className="mb-6 flex items-center gap-3">
+                    <span className="h-px flex-1 bg-zinc-600/60" />
+                    <span className="text-rasya-accent/60" aria-hidden>◆</span>
+                    <span className="h-px flex-1 bg-zinc-600/60" />
+                  </div>
+                  {slide.content != null ? (
+                    <div className="mt-4">{slide.content}</div>
+                  ) : (
+                    <p className="max-w-2xl font-display text-base leading-relaxed text-zinc-400 md:text-lg">
+                      {slide.desc}
+                    </p>
+                  )}
+                </>
               )}
+              {/* Garis kuning tipis + tombol kanan/kiri di dalam slide, di bawah konten */}
+              <div className="mt-auto pt-8">
+                <div className="mb-4 h-px w-full bg-gradient-to-r from-transparent via-rasya-accent/50 to-transparent" />
+                <div className="flex items-center justify-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => scrollTo(activeIndex - 1)}
+                    disabled={activeIndex === 0}
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border-2 border-zinc-600/80 bg-zinc-900/80 text-xl text-zinc-300 transition hover:border-rasya-accent/60 hover:text-rasya-accent disabled:opacity-40 disabled:hover:border-zinc-600/80 disabled:hover:text-zinc-300"
+                    aria-label="Slide sebelumnya"
+                  >
+                    ←
+                  </button>
+                  <span className="font-gothic min-w-[4rem] text-center text-sm tracking-wide text-zinc-500">
+                    {activeIndex + 1} / {total}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => scrollTo(activeIndex + 1)}
+                    disabled={activeIndex === total - 1}
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border-2 border-zinc-600/80 bg-zinc-900/80 text-xl text-zinc-300 transition hover:border-rasya-accent/60 hover:text-rasya-accent disabled:opacity-40 disabled:hover:border-zinc-600/80 disabled:hover:text-zinc-300"
+                    aria-label="Slide berikutnya"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
               {/* Bottom corner accent */}
               <div className="pointer-events-none absolute bottom-0 right-0 h-16 w-16 border-b-2 border-r-2 border-rasya-accent/20" />
             </article>
