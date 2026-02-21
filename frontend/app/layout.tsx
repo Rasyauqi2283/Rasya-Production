@@ -4,8 +4,11 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import MaintenancePage from "@/components/MaintenancePage";
 import RamadanAdOverlay from "@/components/RamadanAdOverlay";
 import "./globals.css";
+
+const isMaintenance = process.env.NEXT_PUBLIC_MAINTENANCE === "true";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -20,7 +23,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://raspro.co.id"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: {
     default: "Rasya Production",
     template: "%s | Rasya Production",
@@ -43,17 +46,19 @@ export const metadata: Metadata = {
   authors: [{ name: "Rasya Production" }],
   creator: "Rasya Production",
   publisher: "Rasya Production",
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
-    },
-  },
+  robots: isMaintenance
+    ? { index: false, follow: false }
+    : {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          "max-image-preview": "large",
+          "max-snippet": -1,
+          "max-video-preview": -1,
+        },
+      },
   openGraph: {
     title: "Rasya Production",
     description:
@@ -96,13 +101,17 @@ export default function RootLayout({
       className={`${outfit.variable} ${jetbrainsMono.variable}`}
     >
       <body className="min-h-screen font-display">
-        <LanguageProvider>
-          <RamadanAdOverlay />
-          <Header />
-          <main>{children}</main>
-          <Footer />
-          <CookieConsentBanner />
-        </LanguageProvider>
+        {isMaintenance ? (
+          <MaintenancePage />
+        ) : (
+          <LanguageProvider>
+            <RamadanAdOverlay />
+            <Header />
+            <main>{children}</main>
+            <Footer />
+            <CookieConsentBanner />
+          </LanguageProvider>
+        )}
       </body>
     </html>
   );
