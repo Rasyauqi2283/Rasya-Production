@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PreviewWatermark from "@/components/PreviewWatermark";
 
 const menu = [
   { name: "Espresso", price: "Rp 18.000" },
@@ -11,8 +12,9 @@ const menu = [
 
 export default function CafePreviewPage() {
   return (
-    <main className="min-h-screen bg-[#0f0f12] px-6 pb-20 pt-28 text-zinc-100">
-      <div className="mx-auto max-w-6xl">
+    <main className="relative min-h-screen bg-[#0f0f12] px-6 pb-20 pt-28 text-zinc-100">
+      <PreviewWatermark />
+      <div className="relative z-10 mx-auto max-w-6xl">
         <Link href="/layanan-preview" className="text-xs text-zinc-400 hover:text-rasya-accent">
           ← Kembali ke layanan preview
         </Link>

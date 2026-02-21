@@ -2,6 +2,16 @@ import Link from "next/link";
 
 const previews = [
   {
+    slug: "game-store",
+    title: "Game Store Theme",
+    desc: "Modern storefront concept with featured games and bundles.",
+  },
+  {
+    slug: "montessori",
+    title: "Montessori School Theme",
+    desc: "Landing PAUD/TK dengan pendekatan Montessori, kurikulum terintegrasi.",
+  },
+  {
     slug: "cafe",
     title: "Cafe Theme",
     desc: "Menu-first landing layout with pricing emphasis.",
@@ -10,11 +20,6 @@ const previews = [
     slug: "kostel",
     title: "Kostel Theme",
     desc: "Pricing plan layout with monthly, 6-month, and yearly tiers.",
-  },
-  {
-    slug: "game-store",
-    title: "Game Store Theme",
-    desc: "Modern storefront concept with featured games and bundles.",
   },
 ];
 
@@ -36,7 +41,7 @@ export default function LayananPreviewIndexPage() {
           Pilih tema untuk melihat desain preview. Template bisa ditambah untuk Web & Digital, Design, Konten, dan lainnya.
         </p>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
           {previews.map((item) => (
             <Link
               key={item.slug}

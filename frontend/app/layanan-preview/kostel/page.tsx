@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PreviewWatermark from "@/components/PreviewWatermark";
 
 const plans = [
   {
@@ -23,8 +24,9 @@ const plans = [
 
 export default function KostelPreviewPage() {
   return (
-    <main className="min-h-screen bg-rasya-dark px-6 pb-20 pt-28 text-zinc-100">
-      <div className="mx-auto max-w-6xl">
+    <main className="relative min-h-screen bg-rasya-dark px-6 pb-20 pt-28 text-zinc-100">
+      <PreviewWatermark />
+      <div className="relative z-10 mx-auto max-w-6xl">
         <Link href="/layanan-preview" className="text-xs text-zinc-400 hover:text-rasya-accent">
           ← Kembali ke layanan preview
         </Link>
