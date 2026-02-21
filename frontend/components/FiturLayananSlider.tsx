@@ -33,6 +33,24 @@ const fiturSlides = [
       "Conversion — CTA, Form, WhatsApp, Funnel",
       "Automation — Dashboard, Export, Analytics",
     ],
+    comparison: {
+      leftTitle: "❌ Proses Konvensional",
+      leftItems: [
+        "Catat manual di kertas",
+        "Data tercecer",
+        "Rekap Excel manual",
+        "Sulit monitoring",
+        "Lambat follow up",
+      ],
+      rightTitle: "✅ Dengan Sistem Digital",
+      rightItems: [
+        "Form otomatis tersimpan",
+        "Dashboard realtime",
+        "Monitoring 24/7",
+        "Data terpusat",
+        "Export laporan instan",
+      ],
+    },
     isSekat: true,
   },
   {
@@ -68,12 +86,20 @@ export type ExtraSlide = {
   content: ReactNode;
 };
 
+type ComparisonBlock = {
+  leftTitle: string;
+  leftItems: string[];
+  rightTitle: string;
+  rightItems: string[];
+};
+
 type SlideItem = {
   title: string;
   tagline?: string;
   desc?: string;
   listItems?: string[];
   listFootnote?: string;
+  comparison?: ComparisonBlock;
   content?: ReactNode;
   isSekat?: boolean;
 };
@@ -101,8 +127,8 @@ export default function FiturLayananSlider({
     setActiveIndex(i);
     const el = scrollRef.current;
     if (el) {
-      const slide = el.querySelector(`[data-slide="${i}"]`);
-      slide?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      const slideWidth = el.clientWidth;
+      el.scrollTo({ left: i * slideWidth, behavior: "smooth" });
     }
   };
 
@@ -171,6 +197,30 @@ export default function FiturLayananSlider({
                       {slide.desc}
                     </p>
                   ) : null}
+                  {slide.comparison && (
+                    <div className="mt-4 grid w-full max-w-2xl grid-cols-2 gap-4 text-left">
+                      <div className="rounded border border-zinc-600/60 bg-zinc-900/50 px-3 py-2">
+                        <p className="mb-1.5 text-xs font-semibold text-zinc-400">
+                          {slide.comparison.leftTitle}
+                        </p>
+                        <ul className="list-none space-y-0.5 text-[11px] text-zinc-500 md:text-xs">
+                          {slide.comparison.leftItems.map((item, idx) => (
+                            <li key={idx}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="rounded border border-rasya-accent/30 bg-rasya-accent/5 px-3 py-2">
+                        <p className="mb-1.5 text-xs font-semibold text-rasya-accent/90">
+                          {slide.comparison.rightTitle}
+                        </p>
+                        <ul className="list-none space-y-0.5 text-[11px] text-zinc-300 md:text-xs">
+                          {slide.comparison.rightItems.map((item, idx) => (
+                            <li key={idx}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
